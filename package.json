@@ -1,0 +1,28 @@
+{
+  "name": "html-to-pdf-converter",
+  "version": "1.0.0",
+  "description": "A Node.js application that converts HTML files to PDF using Puppeteer",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node test.js",
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "build": "echo 'No build step required'"
+  },
+  "keywords": ["html", "pdf", "puppeteer", "converter"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^21.6.1",
+    "commander": "^11.1.0",
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

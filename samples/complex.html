@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complex HTML Document with Advanced Styling</title>
+    <style>
+        @page {
+            margin: 2cm;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        h2 {
+            color: #34495e;
+            border-left: 4px solid #3498db;
+            padding-left: 15px;
+            margin-top: 40px;
+        }
+        
+        .card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .card h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        
+        .highlight {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border-left: 4px solid #ff6b6b;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .grid-item {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .grid-item h4 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .stats-table th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .stats-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .stats-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .stats-table tr:hover {
+            background-color: #e3f2fd;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            transition: width 0.3s ease;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #3498db;
+            color: white;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin: 2px;
+        }
+        
+        .badge.success { background: #27ae60; }
+        .badge.warning { background: #f39c12; }
+        .badge.error { background: #e74c3c; }
+        
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e9ecef;
+            text-align: center;
+            color: #6c757d;
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Advanced HTML to PDF Conversion Test</h1>
+        
+        <div class="highlight">
+            <strong>🎯 Mission:</strong> This document tests advanced HTML features including gradients, grid layouts, complex styling, and responsive design elements to ensure comprehensive PDF conversion capabilities.
+        </div>
+        
+        <h2>📊 Performance Metrics</h2>
+        <table class="stats-table">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>HTML Parsing</td>
+                    <td>98.5%</td>
+                    <td><span class="badge success">Excellent</span></td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 98.5%"></div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>CSS Rendering</td>
+                    <td>95.2%</td>
+                    <td><span class="badge success">Good</span></td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 95.2%"></div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Layout Preservation</td>
+                    <td>92.8%</td>
+                    <td><span class="badge warning">Fair</span></td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 92.8%"></div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Font Rendering</td>
+                    <td>99.1%</td>
+                    <td><span class="badge success">Excellent</span></td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 99.1%"></div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h2>🎨 Feature Showcase</h2>
+        <div class="grid">
+            <div class="grid-item">
+                <h4>Gradients</h4>
+                <p>Linear and radial gradients are preserved in PDF output</p>
+            </div>
+            <div class="grid-item">
+                <h4>Grid Layout</h4>
+                <p>CSS Grid layouts maintain their structure</p>
+            </div>
+            <div class="grid-item">
+                <h4>Shadows</h4>
+                <p>Box shadows and text shadows are rendered</p>
+            </div>
+            <div class="grid-item">
+                <h4>Typography</h4>
+                <p>Custom fonts and text styling preserved</p>
+            </div>
+        </div>
+        
+        <h2>💻 Code Example</h2>
+        <div class="code-block">
+// HTML to PDF Conversion
+const puppeteer = require('puppeteer');
+
+async function convertToPDF(htmlContent, outputPath) {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    
+    await page.setContent(htmlContent);
+    await page.pdf({
+        path: outputPath,
+        format: 'A4',
+        printBackground: true
+    });
+    
+    await browser.close();
+}
+        </div>
+        
+        <div class="card">
+            <h3>🔧 Configuration Options</h3>
+            <p>The converter supports various configuration options:</p>
+            <ul>
+                <li><strong>Format:</strong> A4, A3, Letter, Legal</li>
+                <li><strong>Margins:</strong> Customizable page margins</li>
+                <li><strong>Background:</strong> Print background graphics</li>
+                <li><strong>Header/Footer:</strong> Custom templates</li>
+                <li><strong>Viewport:</strong> Custom browser viewport</li>
+            </ul>
+        </div>
+        
+        <h2>✅ Test Results Summary</h2>
+        <div class="card">
+            <h3>Compatibility Matrix</h3>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>HTML</th>
+                        <th>CSS</th>
+                        <th>PDF Output</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Basic Elements</td>
+                        <td>✅</td>
+                        <td>✅</td>
+                        <td>✅</td>
+                    </tr>
+                    <tr>
+                        <td>Advanced Styling</td>
+                        <td>✅</td>
+                        <td>✅</td>
+                        <td>✅</td>
+                    </tr>
+                    <tr>
+                        <td>Responsive Design</td>
+                        <td>✅</td>
+                        <td>⚠️</td>
+                        <td>⚠️</td>
+                    </tr>
+                    <tr>
+                        <td>JavaScript</td>
+                        <td>✅</td>
+                        <td>N/A</td>
+                        <td>❌</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Generated by HTML to PDF Converter</strong></p>
+            <p>Timestamp: <span id="timestamp"></span></p>
+            <p>Version: 1.0.0 | Engine: Puppeteer</p>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('timestamp').textContent = new Date().toISOString();
+    </script>
+</body>
+</html>

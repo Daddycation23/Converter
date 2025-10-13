@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple HTML Document</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 40px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        .highlight {
+            background-color: #f39c12;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .info-box {
+            background-color: #ecf0f1;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #bdc3c7;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #34495e;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <h1>HTML to PDF Converter Sample</h1>
+    
+    <p>This is a <span class="highlight">sample HTML document</span> designed to test the HTML to PDF conversion functionality. It includes various HTML elements and styling to ensure the converter works correctly.</p>
+    
+    <div class="info-box">
+        <strong>Note:</strong> This document contains multiple HTML elements including headings, paragraphs, tables, and styled content to demonstrate the PDF conversion capabilities.
+    </div>
+    
+    <h2>Features Tested</h2>
+    <ul>
+        <li>Typography and font rendering</li>
+        <li>Colors and backgrounds</li>
+        <li>Tables and borders</li>
+        <li>Margins and padding</li>
+        <li>Styled elements</li>
+    </ul>
+    
+    <h2>Sample Data Table</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Status</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>HTML Rendering</td>
+                <td>✅ Working</td>
+                <td>All HTML elements render correctly</td>
+            </tr>
+            <tr>
+                <td>CSS Styling</td>
+                <td>✅ Working</td>
+                <td>Colors, fonts, and layout preserved</td>
+            </tr>
+            <tr>
+                <td>Table Support</td>
+                <td>✅ Working</td>
+                <td>Borders and cell formatting maintained</td>
+            </tr>
+            <tr>
+                <td>Typography</td>
+                <td>✅ Working</td>
+                <td>Font families and sizes preserved</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <h2>Conclusion</h2>
+    <p>This sample demonstrates that the HTML to PDF converter successfully preserves the original HTML formatting and styling when generating PDF documents. The conversion maintains visual fidelity while ensuring the content is properly structured for PDF output.</p>
+    
+    <div class="info-box">
+        <strong>Generated on:</strong> <span id="current-date"></span>
+    </div>
+    
+    <script>
+        document.getElementById('current-date').textContent = new Date().toLocaleString();
+    </script>
+</body>
+</html>
