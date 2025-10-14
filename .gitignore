@@ -193,7 +193,7 @@ dist
 
 # Project-specific ignores
 # Generated PDF files (uncomment if you want to ignore all PDF files)
-# *.pdf
+*.pdf
 
 # IDE files
 .vscode/
