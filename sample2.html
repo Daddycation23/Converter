@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Comprehensive HTML tag example">
+  <title>All Common HTML Tags</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      line-height: 1.6;
+    }
+    section {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+    table, th, td {
+      border: 1px solid #555;
+      border-collapse: collapse;
+      padding: 5px 10px;
+    }
+    code {
+      background-color: #f4f4f4;
+      padding: 3px 6px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Main Heading (h1)</h1>
+    <nav>
+      <ul>
+        <li><a href="#text">Text Elements</a></li>
+        <li><a href="#media">Media</a></li>
+        <li><a href="#forms">Forms</a></li>
+        <li><a href="#tables">Tables</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <!-- TEXT ELEMENTS -->
+    <section id="text">
+      <h2>Text Elements</h2>
+      <p>This is a paragraph. You can use <strong>strong</strong> or <b>bold</b> for emphasis, <em>emphasis</em> or <i>italic</i> for slanted text, and <u>underline</u> text.</p>
+      <p>Here’s a <mark>highlighted</mark> word, <small>small text</small>, and <del>deleted</del> or <ins>inserted</ins> text.</p>
+      <blockquote cite="https://example.com">“This is a blockquote — a section of quoted text.”</blockquote>
+      <p>Inline <code>code</code> example, and a keyboard shortcut: <kbd>Ctrl + S</kbd>.</p>
+      <pre>
+function helloWorld() {
+  console.log("Hello, world!");
+}
+      </pre>
+      <hr>
+      <h3>Lists</h3>
+      <ul>
+        <li>Unordered list item 1</li>
+        <li>Unordered list item 2</li>
+      </ul>
+      <ol>
+        <li>Ordered list item 1</li>
+        <li>Ordered list item 2</li>
+      </ol>
+      <dl>
+        <dt>HTML</dt>
+        <dd>HyperText Markup Language</dd>
+      </dl>
+    </section>
+
+    <!-- MEDIA -->
+    <section id="media">
+      <h2>Media</h2>
+      <figure>
+        <img src="https://via.placeholder.com/300" alt="Placeholder image">
+        <figcaption>Example image with caption</figcaption>
+      </figure>
+
+      <audio controls>
+        <source src="example.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+      </audio>
+
+      <video width="320" height="240" controls>
+        <source src="example.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+
+      <canvas id="exampleCanvas" width="200" height="100" style="border:1px solid #000;">
+        Your browser does not support the canvas tag.
+      </canvas>
+    </section>
+
+    <!-- TABLES -->
+    <section id="tables">
+      <h2>Tables</h2>
+      <table>
+        <caption>Example Table</caption>
+        <thead>
+          <tr>
+            <th>Header 1</th>
+            <th>Header 2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Row 1, Col 1</td>
+            <td>Row 1, Col 2</td>
+          </tr>
+          <tr>
+            <td>Row 2, Col 1</td>
+            <td>Row 2, Col 2</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2">Table footer</td>
+          </tr>
+        </tfoot>
+      </table>
+    </section>
+
+    <!-- FORMS -->
+    <section id="forms">
+      <h2>Forms</h2>
+      <form action="#" method="post">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" placeholder="Enter your name"><br><br>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email"><br><br>
+
+        <label for="color">Favorite Color:</label>
+        <input type="color" id="color" name="color"><br><br>
+
+        <label>Gender:</label>
+        <input type="radio" name="gender" value="male"> Male
+        <input type="radio" name="gender" value="female"> Female<br><br>
+
+        <label for="country">Country:</label>
+        <select id="country" name="country">
+          <option value="sg">Singapore</option>
+          <option value="us">United States</option>
+        </select><br><br>
+
+        <label for="comments">Comments:</label><br>
+        <textarea id="comments" name="comments" rows="4" cols="50"></textarea><br><br>
+
+        <input type="checkbox" id="agree" name="agree">
+        <label for="agree">I agree to the terms</label><br><br>
+
+        <input type="submit" value="Submit">
+        <input type="reset" value="Reset">
+      </form>
+    </section>
+
+    <!-- OTHER TAGS -->
+    <section id="misc">
+      <h2>Miscellaneous Elements</h2>
+      <details>
+        <summary>Click to expand</summary>
+        <p>This is a details/summary element.</p>
+      </details>
+
+      <progress value="70" max="100"></progress>
+      <meter value="0.6">60%</meter>
+
+      <address>
+        Written by <a href="mailto:webmaster@example.com">Webmaster</a><br>
+        Visit us at Example.com<br>
+        Singapore
+      </address>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Example Corp. All rights reserved.</p>
+  </footer>
+</body>
+</html>
