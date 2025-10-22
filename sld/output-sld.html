@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PV Array Single Line Diagram</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .diagram-container {
+            text-align: center;
+            overflow: auto;
+        }
+        svg {
+            border: 1px solid #ddd;
+            background-color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PV Array Single Line Diagram</h1>
+        <div class="diagram-container">
+            <svg width="1200" height="800" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          .component { cursor: pointer; }
+          .component:hover { opacity: 0.7; }
+          .connection { stroke: #333; stroke-width: 3; }
+          .positive-connection { stroke: #dc2626; stroke-width: 3; }
+          .negative-connection { stroke: #000000; stroke-width: 3; }
+          .busbar-connection { stroke: #1f2937; stroke-width: 4; }
+          .dc-connection { stroke: #059669; stroke-width: 3; }
+          .label { font-family: Arial, sans-serif; font-size: 12px; }
+          .title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; }
+        </style>
+      </defs>
+      <rect width="100%" height="100%" fill="white"/>
+      <g class="diagram"><text x="600" y="30" text-anchor="middle" class="title">Electrical Single Line Diagram</text><line x1="140" y1="320" x2="420" y2="195" class="busbar-connection"/><path d="M 592 -50 Q 490 72.5 412 195" 
+                         fill="none" stroke="#dc2626" stroke-width="3" class="positive-connection"/><path d="M 608 -50 Q 530 72.5 428 195" 
+                         fill="none" stroke="#000000" stroke-width="3" class="negative-connection"/><path d="M 652 30 Q 610 -10 592 -50" 
+                         fill="none" stroke="#dc2626" stroke-width="3" class="positive-connection"/><path d="M 668 30 Q 650 -10 608 -50" 
+                         fill="none" stroke="#000000" stroke-width="3" class="negative-connection"/><path d="M 752 30 Q 660 -10 592 -50" 
+                         fill="none" stroke="#dc2626" stroke-width="3" class="positive-connection"/><path d="M 768 30 Q 700 -10 608 -50" 
+                         fill="none" stroke="#000000" stroke-width="3" class="negative-connection"/><path d="M 852 30 Q 710 -10 592 -50" 
+                         fill="none" stroke="#dc2626" stroke-width="3" class="positive-connection"/><path d="M 868 30 Q 750 -10 608 -50" 
+                         fill="none" stroke="#000000" stroke-width="3" class="negative-connection"/><path d="M 952 30 Q 760 -10 592 -50" 
+                         fill="none" stroke="#dc2626" stroke-width="3" class="positive-connection"/><path d="M 968 30 Q 800 -10 608 -50" 
+                         fill="none" stroke="#000000" stroke-width="3" class="negative-connection"/><path d="M 592 150 Q 490 172.5 412 195" 
+                         fill="none" stroke="#dc2626" stroke-width="3" class="positive-connection"/><path d="M 608 150 Q 530 172.5 428 195" 
+                         fill="none" stroke="#000000" stroke-width="3" class="negative-connection"/><path d="M 652 230 Q 610 190 592 150" 
+                         fill="none" stroke="#dc2626" stroke-width="3" class="positive-connection"/><path d="M 668 230 Q 650 190 608 150" 
+                         fill="none" stroke="#000000" stroke-width="3" class="negative-connection"/><path d="M 752 230 Q 660 190 592 150" 
+                         fill="none" stroke="#dc2626" stroke-width="3" class="positive-connection"/><path d="M 768 230 Q 700 190 608 150" 
+                         fill="none" stroke="#000000" stroke-width="3" class="negative-connection"/><path d="M 852 230 Q 710 190 592 150" 
+                         fill="none" stroke="#dc2626" stroke-width="3" class="positive-connection"/><path d="M 868 230 Q 750 190 608 150" 
+                         fill="none" stroke="#000000" stroke-width="3" class="negative-connection"/><path d="M 952 230 Q 760 190 592 150" 
+                         fill="none" stroke="#dc2626" stroke-width="3" class="positive-connection"/><path d="M 968 230 Q 800 190 608 150" 
+                         fill="none" stroke="#000000" stroke-width="3" class="negative-connection"/><path d="M 652 310 Q 610 230 592 150" 
+                         fill="none" stroke="#dc2626" stroke-width="3" class="positive-connection"/><path d="M 668 310 Q 650 230 608 150" 
+                         fill="none" stroke="#000000" stroke-width="3" class="negative-connection"/><g class="component" id="busbar_0">
+        <rect x="130" y="120" width="20" height="400" fill="black" stroke="black" stroke-width="2"/>
+        <text x="120" y="320" 
+              text-anchor="end" 
+              class="label" font-size="12">Main Bus</text>
+      </g><g class="component" id="inverter_0">
+        <rect x="380" y="170" width="80" height="50" fill="white" stroke="black" stroke-width="2" rx="5"/>
+              <text x="40" y="20" text-anchor="middle" font-size="10" font-weight="bold">INVERTER</text>
+              <text x="40" y="35" text-anchor="middle" font-size="8">AC/DC</text>
+        <text x="420" y="235" 
+              text-anchor="middle" 
+              class="label" font-size="12">Inverter 1</text>
+      </g><g class="component" id="isolator_0_0">
+        <rect x="580" y="-70" width="40" height="40" fill="white" stroke="black" stroke-width="2"/>
+              <circle cx="20" cy="20" r="8" fill="none" stroke="black" stroke-width="2"/>
+              <line x1="12" y1="20" x2="28" y2="20" stroke="black" stroke-width="2"/>
+              <text x="20" y="35" text-anchor="middle" font-size="8">DC ISO</text>
+        <text x="600" y="-15" 
+              text-anchor="middle" 
+              class="label" font-size="12">DC Isolator 1-1</text>
+      </g><g class="component" id="pv_0_0_0">
+        <rect x="630" y="10" width="60" height="40" fill="lightblue" stroke="black" stroke-width="2"/>
+              <text x="30" y="15" text-anchor="middle" font-size="8" font-weight="bold">PV STRING</text>
+              <text x="30" y="28" text-anchor="middle" font-size="7">Panels</text>
+        <text x="660" y="5" 
+              text-anchor="middle" 
+              class="label" font-size="9">Panasonic 330W HiT (10 panels)</text>
+      </g><g class="component" id="pv_0_0_1">
+        <rect x="730" y="10" width="60" height="40" fill="lightblue" stroke="black" stroke-width="2"/>
+              <text x="30" y="15" text-anchor="middle" font-size="8" font-weight="bold">PV STRING</text>
+              <text x="30" y="28" text-anchor="middle" font-size="7">Panels</text>
+        <text x="760" y="5" 
+              text-anchor="middle" 
+              class="label" font-size="9">Panasonic 330W HiT (10 panels)</text>
+      </g><g class="component" id="pv_0_0_2">
+        <rect x="830" y="10" width="60" height="40" fill="lightblue" stroke="black" stroke-width="2"/>
+              <text x="30" y="15" text-anchor="middle" font-size="8" font-weight="bold">PV STRING</text>
+              <text x="30" y="28" text-anchor="middle" font-size="7">Panels</text>
+        <text x="860" y="5" 
+              text-anchor="middle" 
+              class="label" font-size="9">Panasonic 330W HiT (10 panels)</text>
+      </g><g class="component" id="pv_0_0_3">
+        <rect x="930" y="10" width="60" height="40" fill="lightblue" stroke="black" stroke-width="2"/>
+              <text x="30" y="15" text-anchor="middle" font-size="8" font-weight="bold">PV STRING</text>
+              <text x="30" y="28" text-anchor="middle" font-size="7">Panels</text>
+        <text x="960" y="5" 
+              text-anchor="middle" 
+              class="label" font-size="9">Panasonic 330W HiT (10 panels)</text>
+      </g><g class="component" id="isolator_0_1">
+        <rect x="580" y="130" width="40" height="40" fill="white" stroke="black" stroke-width="2"/>
+              <circle cx="20" cy="20" r="8" fill="none" stroke="black" stroke-width="2"/>
+              <line x1="12" y1="20" x2="28" y2="20" stroke="black" stroke-width="2"/>
+              <text x="20" y="35" text-anchor="middle" font-size="8">DC ISO</text>
+        <text x="600" y="185" 
+              text-anchor="middle" 
+              class="label" font-size="12">DC Isolator 1-2</text>
+      </g><g class="component" id="pv_0_1_0">
+        <rect x="630" y="210" width="60" height="40" fill="lightblue" stroke="black" stroke-width="2"/>
+              <text x="30" y="15" text-anchor="middle" font-size="8" font-weight="bold">PV STRING</text>
+              <text x="30" y="28" text-anchor="middle" font-size="7">Panels</text>
+        <text x="660" y="205" 
+              text-anchor="middle" 
+              class="label" font-size="9">Panasonic 330W HiT (10 panels)</text>
+      </g><g class="component" id="pv_0_1_1">
+        <rect x="730" y="210" width="60" height="40" fill="lightblue" stroke="black" stroke-width="2"/>
+              <text x="30" y="15" text-anchor="middle" font-size="8" font-weight="bold">PV STRING</text>
+              <text x="30" y="28" text-anchor="middle" font-size="7">Panels</text>
+        <text x="760" y="205" 
+              text-anchor="middle" 
+              class="label" font-size="9">Panasonic 330W HiT (10 panels)</text>
+      </g><g class="component" id="pv_0_1_2">
+        <rect x="830" y="210" width="60" height="40" fill="lightblue" stroke="black" stroke-width="2"/>
+              <text x="30" y="15" text-anchor="middle" font-size="8" font-weight="bold">PV STRING</text>
+              <text x="30" y="28" text-anchor="middle" font-size="7">Panels</text>
+        <text x="860" y="205" 
+              text-anchor="middle" 
+              class="label" font-size="9">Panasonic 330W HiT (10 panels)</text>
+      </g><g class="component" id="pv_0_1_3">
+        <rect x="930" y="210" width="60" height="40" fill="lightblue" stroke="black" stroke-width="2"/>
+              <text x="30" y="15" text-anchor="middle" font-size="8" font-weight="bold">PV STRING</text>
+              <text x="30" y="28" text-anchor="middle" font-size="7">Panels</text>
+        <text x="960" y="205" 
+              text-anchor="middle" 
+              class="label" font-size="9">Panasonic 330W HiT (10 panels)</text>
+      </g><g class="component" id="pv_0_1_4">
+        <rect x="630" y="290" width="60" height="40" fill="lightblue" stroke="black" stroke-width="2"/>
+              <text x="30" y="15" text-anchor="middle" font-size="8" font-weight="bold">PV STRING</text>
+              <text x="30" y="28" text-anchor="middle" font-size="7">Panels</text>
+        <text x="660" y="285" 
+              text-anchor="middle" 
+              class="label" font-size="9">Panasonic 330W HiT (10 panels)</text>
+      </g><g class="legend">
+      <text x="50" y="720" class="label" font-weight="bold">Legend:</text>
+      <line x1="50" y1="735" x2="80" y2="735" class="positive-connection"/>
+      <text x="90" y="740" class="label">Positive (Red)</text>
+      <line x1="200" y1="735" x2="230" y2="735" class="negative-connection"/>
+      <text x="240" y="740" class="label">Negative (Black)</text>
+      <line x1="350" y1="735" x2="380" y2="735" class="busbar-connection"/>
+      <text x="390" y="740" class="label">Busbar</text>
+    </g></g></svg>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,52 @@
+{
+	"inverters":[
+		{
+			"isolators": [
+				{
+					"pvstrings": [
+						{
+							"model": "Panasonic 330W HiT",
+							"length": 10
+						},
+						{
+							"model": "Panasonic 330W HiT",
+							"length": 10
+						},
+						{
+							"model": "Panasonic 330W HiT",
+							"length": 10
+						},
+						{
+							"model": "Panasonic 330W HiT",
+							"length": 10
+						}
+					]
+				},
+				{
+					"pvstrings": [
+						{
+							"model": "Panasonic 330W HiT",
+							"length": 10
+						},
+						{
+							"model": "Panasonic 330W HiT",
+							"length": 10
+						},
+						{
+							"model": "Panasonic 330W HiT",
+							"length": 10
+						},
+						{
+							"model": "Panasonic 330W HiT",
+							"length": 10
+						},
+						{
+							"model": "Panasonic 330W HiT",
+							"length": 10
+						}
+					]
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,414 @@
+/**
+ * JSON to Single Line Diagram Converter for Electrical Engineering
+ * Converts electrical system JSON data to SVG-based single line diagrams
+ */
+
+const fs = require('fs').promises;
+const path = require('path');
+
+class SLDConverter {
+  constructor(options = {}) {
+    this.options = {
+      width: options.width || 1200,
+      height: options.height || 800,
+      margin: options.margin || 50,
+      componentSpacing: options.componentSpacing || 100,
+      lineThickness: options.lineThickness || 2,
+      fontSize: options.fontSize || 12,
+      ...options
+    };
+    
+    this.symbols = this.initializeSymbols();
+  }
+
+  /**
+   * Initialize electrical symbols and their SVG representations
+   */
+  initializeSymbols() {
+    return {
+      inverter: {
+        width: 80,
+        height: 50,
+        svg: `<rect x="0" y="0" width="80" height="50" fill="white" stroke="black" stroke-width="2" rx="5"/>
+              <text x="40" y="20" text-anchor="middle" font-size="10" font-weight="bold">INVERTER</text>
+              <text x="40" y="35" text-anchor="middle" font-size="8">AC/DC</text>`
+      },
+      isolator: {
+        width: 40,
+        height: 40,
+        svg: `<rect x="0" y="0" width="40" height="40" fill="white" stroke="black" stroke-width="2"/>
+              <circle cx="20" cy="20" r="8" fill="none" stroke="black" stroke-width="2"/>
+              <line x1="12" y1="20" x2="28" y2="20" stroke="black" stroke-width="2"/>
+              <text x="20" y="35" text-anchor="middle" font-size="8">DC ISO</text>`
+      },
+      pvString: {
+        width: 60,
+        height: 40,
+        svg: `<rect x="0" y="0" width="60" height="40" fill="lightblue" stroke="black" stroke-width="2"/>
+              <text x="30" y="15" text-anchor="middle" font-size="8" font-weight="bold">PV STRING</text>
+              <text x="30" y="28" text-anchor="middle" font-size="7">Panels</text>`
+      },
+      busbar: {
+        width: 20,
+        height: 400,
+        svg: `<rect x="0" y="0" width="20" height="400" fill="black" stroke="black" stroke-width="2"/>`
+      },
+      connection: {
+        svg: `<line x1="0" y1="0" x2="100" y2="0" stroke="black" stroke-width="2"/>`
+      }
+    };
+  }
+
+  /**
+   * Convert JSON data to SVG single line diagram
+   * @param {Object} jsonData - The electrical system JSON data
+   * @returns {string} SVG content
+   */
+  async convertToSVG(jsonData) {
+    const components = [];
+    const connections = [];
+    
+    // Enhanced layout dimensions with better spacing
+    const busbarX = this.options.margin + 80;
+    const inverterX = busbarX + 250;
+    const isolatorX = inverterX + 200;
+    const pvStringX = isolatorX + 200;
+    const pvStringSpacing = 100;
+    const pvStringRowSpacing = 80;
+    
+    let currentY = this.options.margin + 120;
+
+    // Process each inverter
+    for (let i = 0; i < jsonData.inverters.length; i++) {
+      const inverter = jsonData.inverters[i];
+      
+      // Add main busbar (vertical line)
+      const busbarComponent = {
+        id: `busbar_${i}`,
+        type: 'busbar',
+        x: busbarX,
+        y: currentY - 50,
+        label: 'Main Bus'
+      };
+      components.push(busbarComponent);
+
+      // Add inverter component
+      const inverterComponent = {
+        id: `inverter_${i}`,
+        type: 'inverter',
+        x: inverterX,
+        y: currentY,
+        label: `Inverter ${i + 1}`
+      };
+      components.push(inverterComponent);
+
+      // Add connection from busbar to inverter
+      connections.push({
+        from: `busbar_${i}`,
+        to: `inverter_${i}`,
+        type: 'busbar_connection'
+      });
+
+      // Calculate total height needed for all isolators and PV strings
+      let totalHeight = 0;
+      for (let j = 0; j < inverter.isolators.length; j++) {
+        const isolator = inverter.isolators[j];
+        const pvStringsPerRow = 4; // Better arrangement
+        const rows = Math.ceil(isolator.pvstrings.length / pvStringsPerRow);
+        totalHeight += (rows * pvStringRowSpacing) + 120; // 120 for isolator spacing
+      }
+
+      // Center the inverter vertically
+      const startY = currentY - (totalHeight / 2);
+      let isolatorY = startY;
+
+      // Process isolators for this inverter
+      for (let j = 0; j < inverter.isolators.length; j++) {
+        const isolator = inverter.isolators[j];
+        
+        // Add isolator component
+        const isolatorComponent = {
+          id: `isolator_${i}_${j}`,
+          type: 'isolator',
+          x: isolatorX,
+          y: isolatorY,
+          label: `DC Isolator ${i + 1}-${j + 1}`
+        };
+        components.push(isolatorComponent);
+
+        // Add connection from isolator to inverter
+        connections.push({
+          from: `isolator_${i}_${j}`,
+          to: `inverter_${i}`,
+          type: 'dc_connection'
+        });
+
+        // Process PV strings for this isolator with better arrangement
+        const pvStringsPerRow = 4;
+        const rows = Math.ceil(isolator.pvstrings.length / pvStringsPerRow);
+        
+        for (let k = 0; k < isolator.pvstrings.length; k++) {
+          const pvString = isolator.pvstrings[k];
+          const row = Math.floor(k / pvStringsPerRow);
+          const col = k % pvStringsPerRow;
+          
+          // Center PV strings horizontally
+          const totalWidth = (pvStringsPerRow - 1) * pvStringSpacing;
+          const startX = pvStringX - (totalWidth / 2);
+          
+          // Add PV string component
+          const pvComponent = {
+            id: `pv_${i}_${j}_${k}`,
+            type: 'pvString',
+            x: startX + (col * pvStringSpacing),
+            y: isolatorY + 80 + (row * pvStringRowSpacing),
+            label: `${pvString.model} (${pvString.length} panels)`
+          };
+          components.push(pvComponent);
+
+          // Add connection from PV string to isolator
+          connections.push({
+            from: `pv_${i}_${j}_${k}`,
+            to: `isolator_${i}_${j}`,
+            type: 'pv_connection'
+          });
+        }
+
+        isolatorY += (rows * pvStringRowSpacing) + 120;
+      }
+
+      currentY += totalHeight + 150; // Space between inverters
+    }
+
+    return this.generateSVG(components, connections);
+  }
+
+  /**
+   * Generate SVG content from components and connections
+   * @param {Array} components - Array of component objects
+   * @param {Array} connections - Array of connection objects
+   * @returns {string} Complete SVG content
+   */
+  generateSVG(components, connections) {
+    const svgWidth = this.options.width;
+    const svgHeight = this.options.height;
+
+    let svgContent = `<svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <style>
+          .component { cursor: pointer; }
+          .component:hover { opacity: 0.7; }
+          .connection { stroke: #333; stroke-width: 3; }
+          .positive-connection { stroke: #dc2626; stroke-width: 3; }
+          .negative-connection { stroke: #000000; stroke-width: 3; }
+          .busbar-connection { stroke: #1f2937; stroke-width: 4; }
+          .dc-connection { stroke: #059669; stroke-width: 3; }
+          .label { font-family: Arial, sans-serif; font-size: ${this.options.fontSize}px; }
+          .title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; }
+        </style>
+      </defs>
+      <rect width="100%" height="100%" fill="white"/>
+      <g class="diagram">`;
+
+    // Add title
+    svgContent += `<text x="${this.options.width / 2}" y="30" text-anchor="middle" class="title">Electrical Single Line Diagram</text>`;
+
+    // Add connections first (so they appear behind components)
+    connections.forEach(conn => {
+      const fromComp = components.find(c => c.id === conn.from);
+      const toComp = components.find(c => c.id === conn.to);
+      
+      if (fromComp && toComp) {
+        const fromX = fromComp.x + this.symbols[fromComp.type].width / 2;
+        const fromY = fromComp.y + this.symbols[fromComp.type].height / 2;
+        const toX = toComp.x + this.symbols[toComp.type].width / 2;
+        const toY = toComp.y + this.symbols[toComp.type].height / 2;
+        
+        // Draw positive and negative lines for electrical connections
+        if (conn.type === 'pv_connection' || conn.type === 'dc_connection') {
+          // Create curved connections for better visual flow
+          const midX = (fromX + toX) / 2;
+          const midY = (fromY + toY) / 2;
+          const offset = 20;
+          
+          // Positive line (red) with curve
+          svgContent += `<path d="M ${fromX - 8} ${fromY} Q ${midX - offset} ${midY} ${toX - 8} ${toY}" 
+                         fill="none" stroke="#dc2626" stroke-width="3" class="positive-connection"/>`;
+          // Negative line (black) with curve
+          svgContent += `<path d="M ${fromX + 8} ${fromY} Q ${midX + offset} ${midY} ${toX + 8} ${toY}" 
+                         fill="none" stroke="#000000" stroke-width="3" class="negative-connection"/>`;
+        } else if (conn.type === 'busbar_connection') {
+          // Busbar connection (thick black, straight)
+          svgContent += `<line x1="${fromX}" y1="${fromY}" x2="${toX}" y2="${toY}" class="busbar-connection"/>`;
+        } else {
+          // Standard connection
+          svgContent += `<line x1="${fromX}" y1="${fromY}" x2="${toX}" y2="${toY}" class="connection"/>`;
+        }
+      }
+    });
+
+    // Add components
+    components.forEach(comp => {
+      const symbol = this.symbols[comp.type];
+      const symbolSvg = symbol.svg.replace(/x="0"/g, `x="${comp.x}"`).replace(/y="0"/g, `y="${comp.y}"`);
+      
+      // Adjust label positioning based on component type
+      let labelY = comp.y + symbol.height + 15;
+      let labelX = comp.x + symbol.width / 2;
+      
+      if (comp.type === 'pvString') {
+        // Position PV string labels to avoid overlap
+        labelY = comp.y - 5;
+      } else if (comp.type === 'busbar') {
+        // Position busbar label to the left
+        labelX = comp.x - 10;
+        labelY = comp.y + symbol.height / 2;
+      }
+      
+      svgContent += `<g class="component" id="${comp.id}">
+        ${symbolSvg}
+        <text x="${labelX}" y="${labelY}" 
+              text-anchor="${comp.type === 'busbar' ? 'end' : 'middle'}" 
+              class="label" font-size="${comp.type === 'pvString' ? '9' : this.options.fontSize}">${comp.label}</text>
+      </g>`;
+    });
+
+    // Add legend
+    const legendY = this.options.height - 80;
+    svgContent += `<g class="legend">
+      <text x="50" y="${legendY}" class="label" font-weight="bold">Legend:</text>
+      <line x1="50" y1="${legendY + 15}" x2="80" y2="${legendY + 15}" class="positive-connection"/>
+      <text x="90" y="${legendY + 20}" class="label">Positive (Red)</text>
+      <line x1="200" y1="${legendY + 15}" x2="230" y2="${legendY + 15}" class="negative-connection"/>
+      <text x="240" y="${legendY + 20}" class="label">Negative (Black)</text>
+      <line x1="350" y1="${legendY + 15}" x2="380" y2="${legendY + 15}" class="busbar-connection"/>
+      <text x="390" y="${legendY + 20}" class="label">Busbar</text>
+    </g>`;
+
+    svgContent += `</g></svg>`;
+    return svgContent;
+  }
+
+  /**
+   * Convert JSON file to SVG and save to file
+   * @param {string} inputPath - Path to input JSON file
+   * @param {string} outputPath - Path to output SVG file
+   */
+  async convertFile(inputPath, outputPath) {
+    try {
+      const jsonData = JSON.parse(await fs.readFile(inputPath, 'utf8'));
+      const svgContent = await this.convertToSVG(jsonData);
+      await fs.writeFile(outputPath, svgContent, 'utf8');
+      console.log(`✅ Single line diagram generated: ${outputPath}`);
+      return svgContent;
+    } catch (error) {
+      console.error(`❌ Error converting file: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Convert JSON data to HTML with embedded SVG
+   * @param {Object} jsonData - The electrical system JSON data
+   * @param {Object} options - HTML generation options
+   * @returns {string} HTML content
+   */
+  async convertToHTML(jsonData, options = {}) {
+    const svgContent = await this.convertToSVG(jsonData);
+    const title = options.title || 'Electrical Single Line Diagram';
+    
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .diagram-container {
+            text-align: center;
+            overflow: auto;
+        }
+        svg {
+            border: 1px solid #ddd;
+            background-color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>${title}</h1>
+        <div class="diagram-container">
+            ${svgContent}
+        </div>
+    </div>
+</body>
+</html>`;
+  }
+
+  /**
+   * Convert JSON file to HTML and save to file
+   * @param {string} inputPath - Path to input JSON file
+   * @param {string} outputPath - Path to output HTML file
+   * @param {Object} options - HTML generation options
+   */
+  async convertFileToHTML(inputPath, outputPath, options = {}) {
+    try {
+      const jsonData = JSON.parse(await fs.readFile(inputPath, 'utf8'));
+      const htmlContent = await this.convertToHTML(jsonData, options);
+      await fs.writeFile(outputPath, htmlContent, 'utf8');
+      console.log(`✅ HTML single line diagram generated: ${outputPath}`);
+      return htmlContent;
+    } catch (error) {
+      console.error(`❌ Error converting file to HTML: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Get system statistics from JSON data
+   * @param {Object} jsonData - The electrical system JSON data
+   * @returns {Object} System statistics
+   */
+  getSystemStats(jsonData) {
+    let totalInverters = 0;
+    let totalIsolators = 0;
+    let totalPVStrings = 0;
+    let totalPanels = 0;
+
+    jsonData.inverters.forEach(inverter => {
+      totalInverters++;
+      inverter.isolators.forEach(isolator => {
+        totalIsolators++;
+        isolator.pvstrings.forEach(pvString => {
+          totalPVStrings++;
+          totalPanels += pvString.length;
+        });
+      });
+    });
+
+    return {
+      inverters: totalInverters,
+      isolators: totalIsolators,
+      pvStrings: totalPVStrings,
+      totalPanels: totalPanels
+    };
+  }
+}
+
+module.exports = SLDConverter;
