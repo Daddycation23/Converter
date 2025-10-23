@@ -67,66 +67,71 @@ class SLDConverter {
   async convertToSVG(jsonData) {
     const components = [];
     const connections = [];
-    
-    // Enhanced layout dimensions with better spacing
-    const busbarX = this.options.margin + 80;
-    const inverterX = busbarX + 250;
-    const isolatorX = inverterX + 200;
-    const pvStringX = isolatorX + 200;
-    const pvStringSpacing = 100;
-    const pvStringRowSpacing = 80;
-    
-    let currentY = this.options.margin + 120;
 
-    // Process each inverter
+    // Column layout (busbar → inverter → isolator → PV strings)
+    const busbarX = this.options.margin;
+    const inverterX = busbarX + 200;
+    const isolatorX = inverterX + 200;
+    const pvStringX = isolatorX + 220;
+    const pvStringsPerRow = 4;
+    const pvStringSpacing = 110;
+    const pvStringRowSpacing = 90;
+    const betweenInvertersSpacing = 150;
+
+    // Add a single dynamic-height busbar (height will be updated after layout)
+    const busbarComponent = {
+      id: 'busbar_main',
+      type: 'busbar',
+      x: busbarX,
+      y: this.options.margin, // temp; will be updated
+      width: 20,
+      height: 100,
+      label: 'Main Bus'
+    };
+    components.push(busbarComponent);
+
+    // Layout each inverter block vertically
+    let currentY = this.options.margin + 120;
+    let layoutTop = Infinity;
+    let layoutBottom = -Infinity;
+
     for (let i = 0; i < jsonData.inverters.length; i++) {
       const inverter = jsonData.inverters[i];
-      
-      // Add main busbar (vertical line)
-      const busbarComponent = {
-        id: `busbar_${i}`,
-        type: 'busbar',
-        x: busbarX,
-        y: currentY - 50,
-        label: 'Main Bus'
-      };
-      components.push(busbarComponent);
 
-      // Add inverter component
+      // Calculate the vertical height consumed by this inverter block
+      let blockHeight = 0;
+      for (let j = 0; j < inverter.isolators.length; j++) {
+        const iso = inverter.isolators[j];
+        const rows = Math.ceil(iso.pvstrings.length / pvStringsPerRow);
+        blockHeight += (rows * pvStringRowSpacing) + 120; // space for isolator + grid
+      }
+      blockHeight = Math.max(blockHeight, 140);
+
+      const inverterCenterY = currentY + (blockHeight / 2);
+      const inverterTopY = inverterCenterY - (this.symbols.inverter.height / 2);
+
+      // Inverter
       const inverterComponent = {
         id: `inverter_${i}`,
         type: 'inverter',
         x: inverterX,
-        y: currentY,
+        y: inverterTopY,
         label: `Inverter ${i + 1}`
       };
       components.push(inverterComponent);
 
-      // Add connection from busbar to inverter
+      // Busbar → Inverter connection (drawn as horizontal run later)
       connections.push({
-        from: `busbar_${i}`,
+        from: 'busbar_main',
         to: `inverter_${i}`,
         type: 'busbar_connection'
       });
 
-      // Calculate total height needed for all isolators and PV strings
-      let totalHeight = 0;
+      // Isolators and PV strings for this inverter
+      let isolatorY = inverterCenterY - (blockHeight / 2);
       for (let j = 0; j < inverter.isolators.length; j++) {
         const isolator = inverter.isolators[j];
-        const pvStringsPerRow = 4; // Better arrangement
-        const rows = Math.ceil(isolator.pvstrings.length / pvStringsPerRow);
-        totalHeight += (rows * pvStringRowSpacing) + 120; // 120 for isolator spacing
-      }
 
-      // Center the inverter vertically
-      const startY = currentY - (totalHeight / 2);
-      let isolatorY = startY;
-
-      // Process isolators for this inverter
-      for (let j = 0; j < inverter.isolators.length; j++) {
-        const isolator = inverter.isolators[j];
-        
-        // Add isolator component
         const isolatorComponent = {
           id: `isolator_${i}_${j}`,
           type: 'isolator',
@@ -136,27 +141,22 @@ class SLDConverter {
         };
         components.push(isolatorComponent);
 
-        // Add connection from isolator to inverter
+        // Isolator → Inverter
         connections.push({
           from: `isolator_${i}_${j}`,
           to: `inverter_${i}`,
           type: 'dc_connection'
         });
 
-        // Process PV strings for this isolator with better arrangement
-        const pvStringsPerRow = 4;
         const rows = Math.ceil(isolator.pvstrings.length / pvStringsPerRow);
-        
+        const totalWidth = (pvStringsPerRow - 1) * pvStringSpacing;
+        const startX = pvStringX - (totalWidth / 2);
+
         for (let k = 0; k < isolator.pvstrings.length; k++) {
           const pvString = isolator.pvstrings[k];
           const row = Math.floor(k / pvStringsPerRow);
           const col = k % pvStringsPerRow;
-          
-          // Center PV strings horizontally
-          const totalWidth = (pvStringsPerRow - 1) * pvStringSpacing;
-          const startX = pvStringX - (totalWidth / 2);
-          
-          // Add PV string component
+
           const pvComponent = {
             id: `pv_${i}_${j}_${k}`,
             type: 'pvString',
@@ -166,7 +166,6 @@ class SLDConverter {
           };
           components.push(pvComponent);
 
-          // Add connection from PV string to isolator
           connections.push({
             from: `pv_${i}_${j}_${k}`,
             to: `isolator_${i}_${j}`,
@@ -177,8 +176,33 @@ class SLDConverter {
         isolatorY += (rows * pvStringRowSpacing) + 120;
       }
 
-      currentY += totalHeight + 150; // Space between inverters
+      // Track overall vertical extent for busbar sizing
+      layoutTop = Math.min(layoutTop, inverterCenterY - (blockHeight / 2));
+      layoutBottom = Math.max(layoutBottom, inverterCenterY + (blockHeight / 2));
+
+      currentY += blockHeight + betweenInvertersSpacing;
     }
+
+    // Update busbar height to span all inverters neatly
+    const busbarPadding = 60;
+    if (layoutTop !== Infinity && layoutBottom !== -Infinity) {
+      busbarComponent.y = layoutTop - busbarPadding;
+      busbarComponent.height = (layoutBottom - layoutTop) + (busbarPadding * 2);
+    }
+
+    // Expand canvas to fit content
+    let maxRight = 0;
+    let maxBottom = 0;
+    components.forEach(c => {
+      const symbol = this.symbols[c.type];
+      const width = c.type === 'busbar' ? (c.width || 20) : symbol.width;
+      const height = c.type === 'busbar' ? (c.height || symbol.height) : symbol.height;
+      maxRight = Math.max(maxRight, c.x + width);
+      maxBottom = Math.max(maxBottom, c.y + height);
+    });
+
+    this.options.width = Math.max(this.options.width, maxRight + this.options.margin + 80);
+    this.options.height = Math.max(this.options.height, maxBottom + this.options.margin + 120);
 
     return this.generateSVG(components, connections);
   }
@@ -219,30 +243,57 @@ class SLDConverter {
       const toComp = components.find(c => c.id === conn.to);
       
       if (fromComp && toComp) {
-        const fromX = fromComp.x + this.symbols[fromComp.type].width / 2;
-        const fromY = fromComp.y + this.symbols[fromComp.type].height / 2;
-        const toX = toComp.x + this.symbols[toComp.type].width / 2;
-        const toY = toComp.y + this.symbols[toComp.type].height / 2;
+        const fromSymbol = this.symbols[fromComp.type] || {};
+        const toSymbol = this.symbols[toComp.type] || {};
+        const fromCenterX = fromComp.x + (fromComp.type === 'busbar' ? (fromComp.width || 20) / 2 : fromSymbol.width / 2);
+        const fromCenterY = fromComp.y + (fromComp.type === 'busbar' ? (fromComp.height || fromSymbol.height) / 2 : fromSymbol.height / 2);
+        const toCenterX = toComp.x + (toComp.type === 'busbar' ? (toComp.width || 20) / 2 : toSymbol.width / 2);
+        const toCenterY = toComp.y + (toComp.type === 'busbar' ? (toComp.height || toSymbol.height) / 2 : toSymbol.height / 2);
         
         // Draw positive and negative lines for electrical connections
         if (conn.type === 'pv_connection' || conn.type === 'dc_connection') {
-          // Create curved connections for better visual flow
-          const midX = (fromX + toX) / 2;
-          const midY = (fromY + toY) / 2;
-          const offset = 20;
-          
-          // Positive line (red) with curve
-          svgContent += `<path d="M ${fromX - 8} ${fromY} Q ${midX - offset} ${midY} ${toX - 8} ${toY}" 
-                         fill="none" stroke="#dc2626" stroke-width="3" class="positive-connection"/>`;
-          // Negative line (black) with curve
-          svgContent += `<path d="M ${fromX + 8} ${fromY} Q ${midX + offset} ${midY} ${toX + 8} ${toY}" 
-                         fill="none" stroke="#000000" stroke-width="3" class="negative-connection"/>`;
+          // Clean orthogonal routing with parallel positive/negative paths
+          // Determine edge anchors
+          let sx, sy, tx, ty;
+          if (conn.type === 'pv_connection') {
+            // PV (right) → Isolator (left)
+            sx = fromComp.x; // left edge of PV
+            sy = fromComp.y + fromSymbol.height / 2;
+            tx = toComp.x + toSymbol.width; // right edge of isolator
+            ty = toComp.y + toSymbol.height / 2;
+          } else {
+            // Isolator (right) → Inverter (left)
+            sx = fromComp.x; // left edge of isolator
+            sy = fromComp.y + fromSymbol.height / 2;
+            tx = toComp.x + toSymbol.width; // right edge of inverter
+            ty = toComp.y + toSymbol.height / 2;
+          }
+
+          // Create a vertical jog near the destination side to bundle lines neatly
+          const nearDestX = tx - 30;
+          const posOffset = -4;
+          const negOffset = 4;
+          // small horizontal separation so vertical legs don't overlap
+          const posX = nearDestX - 4;
+          const negX = nearDestX + 4;
+
+          const makePath = (offset, midX) => `M ${sx} ${sy + offset} L ${midX} ${sy + offset} L ${midX} ${ty + offset} L ${tx} ${ty + offset}`;
+
+          // Positive (red) and negative (black) parallel polylines with separated verticals
+          svgContent += `<path d="${makePath(posOffset, posX)}" fill="none" stroke="#dc2626" stroke-width="3" class="positive-connection"/>`;
+          svgContent += `<path d="${makePath(negOffset, negX)}" fill="none" stroke="#000000" stroke-width="3" class="negative-connection"/>`;
         } else if (conn.type === 'busbar_connection') {
-          // Busbar connection (thick black, straight)
-          svgContent += `<line x1="${fromX}" y1="${fromY}" x2="${toX}" y2="${toY}" class="busbar-connection"/>`;
+          // Busbar connection: horizontal run from busbar edge to inverter left edge
+          const busbar = fromComp.type === 'busbar' ? fromComp : toComp;
+          const other = fromComp.type === 'busbar' ? toComp : fromComp;
+          const otherSymbol = this.symbols[other.type];
+          const y = other.y + otherSymbol.height / 2;
+          const fromX = busbar.x + (busbar.width || 20);
+          const toX = other.x;
+          svgContent += `<line x1="${fromX}" y1="${y}" x2="${toX}" y2="${y}" class="busbar-connection"/>`;
         } else {
           // Standard connection
-          svgContent += `<line x1="${fromX}" y1="${fromY}" x2="${toX}" y2="${toY}" class="connection"/>`;
+          svgContent += `<line x1="${fromCenterX}" y1="${fromCenterY}" x2="${toCenterX}" y2="${toCenterY}" class="connection"/>`;
         }
       }
     });
@@ -250,19 +301,28 @@ class SLDConverter {
     // Add components
     components.forEach(comp => {
       const symbol = this.symbols[comp.type];
-      const symbolSvg = symbol.svg.replace(/x="0"/g, `x="${comp.x}"`).replace(/y="0"/g, `y="${comp.y}"`);
+      let symbolSvg;
+      if (comp.type === 'busbar') {
+        const width = comp.width || 20;
+        const height = comp.height || symbol.height;
+        symbolSvg = `<rect x="${comp.x}" y="${comp.y}" width="${width}" height="${height}" fill="black" stroke="black" stroke-width="2"/>`;
+      } else {
+        symbolSvg = symbol.svg.replace(/x="0"/g, `x="${comp.x}"`).replace(/y="0"/g, `y="${comp.y}"`);
+      }
       
       // Adjust label positioning based on component type
-      let labelY = comp.y + symbol.height + 15;
-      let labelX = comp.x + symbol.width / 2;
+      const effectiveHeight = comp.type === 'busbar' ? (comp.height || symbol.height) : symbol.height;
+      const effectiveWidth = comp.type === 'busbar' ? (comp.width || 20) : symbol.width;
+      let labelY = comp.y + effectiveHeight + 15;
+      let labelX = comp.x + effectiveWidth / 2;
       
       if (comp.type === 'pvString') {
         // Position PV string labels to avoid overlap
         labelY = comp.y - 5;
       } else if (comp.type === 'busbar') {
-        // Position busbar label to the left
+        // Position busbar label to the left, centered vertically
         labelX = comp.x - 10;
-        labelY = comp.y + symbol.height / 2;
+        labelY = comp.y + effectiveHeight / 2;
       }
       
       svgContent += `<g class="component" id="${comp.id}">

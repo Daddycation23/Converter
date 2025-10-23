@@ -6,11 +6,13 @@
   "scripts": {
     "start": "node index.js",
     "test": "node test.js",
+    "test-sld": "node sld/test-sld.js",
+    "sld": "node sld/sld-cli.js",
     "format": "prettier --write .",
     "lint": "eslint .",
     "build": "echo 'No build step required'"
   },
-  "keywords": ["html", "pdf", "puppeteer", "converter"],
+  "keywords": ["html", "pdf", "puppeteer", "converter", "electrical", "sld", "single-line-diagram"],
   "author": "",
   "license": "MIT",
   "dependencies": {
