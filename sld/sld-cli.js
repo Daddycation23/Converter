@@ -17,24 +17,27 @@ program
 
 program
   .command('convert')
-  .description('Convert JSON file to SVG single line diagram')
+  .description('Convert JSON file to HTML Canvas single line diagram')
   .argument('<input>', 'Input JSON file path')
-  .argument('<output>', 'Output SVG file path')
-  .option('-w, --width <width>', 'SVG width in pixels', '1200')
-  .option('-h, --height <height>', 'SVG height in pixels', '800')
+  .argument('<output>', 'Output HTML file path')
+  .option('-t, --title <title>', 'HTML page title', 'Electrical Single Line Diagram')
+  .option('-w, --width <width>', 'Canvas width in pixels', '1200')
+  .option('-h, --height <height>', 'Canvas height in pixels', '800')
   .option('-m, --margin <margin>', 'Diagram margin in pixels', '50')
-  .option('-s, --spacing <spacing>', 'Component spacing in pixels', '100')
+  .option('-f, --font-size <size>', 'Font size in pixels', '12')
   .action(async (input, output, options) => {
     const converter = new SLDConverter({
       width: parseInt(options.width),
       height: parseInt(options.height),
       margin: parseInt(options.margin),
-      componentSpacing: parseInt(options.spacing)
+      fontSize: parseInt(options.fontSize)
     });
     
     try {
-      console.log(chalk.yellow(`📊 Converting: ${input} → ${output}`));
-      await converter.convertFile(input, output);
+      console.log(chalk.yellow(`🎨 Converting: ${input} → ${output}`));
+      await converter.convertFileToCanvas(input, output, {
+        title: options.title
+      });
       
       // Display system statistics
       const jsonData = JSON.parse(require('fs').readFileSync(input, 'utf8'));
@@ -45,32 +48,6 @@ program
       console.log(chalk.blue(`   Isolators: ${stats.isolators}`));
       console.log(chalk.blue(`   PV Strings: ${stats.pvStrings}`));
       console.log(chalk.blue(`   Total Panels: ${stats.totalPanels}`));
-      
-    } catch (error) {
-      console.error(chalk.red(`💥 Conversion failed: ${error.message}`));
-      process.exit(1);
-    }
-  });
-
-program
-  .command('html')
-  .description('Convert JSON file to HTML with embedded SVG')
-  .argument('<input>', 'Input JSON file path')
-  .argument('<output>', 'Output HTML file path')
-  .option('-t, --title <title>', 'HTML page title', 'Electrical Single Line Diagram')
-  .option('-w, --width <width>', 'SVG width in pixels', '1200')
-  .option('-h, --height <height>', 'SVG height in pixels', '800')
-  .action(async (input, output, options) => {
-    const converter = new SLDConverter({
-      width: parseInt(options.width),
-      height: parseInt(options.height)
-    });
-    
-    try {
-      console.log(chalk.yellow(`🌐 Converting: ${input} → ${output}`));
-      await converter.convertFileToHTML(input, output, {
-        title: options.title
-      });
       
     } catch (error) {
       console.error(chalk.red(`💥 Conversion failed: ${error.message}`));

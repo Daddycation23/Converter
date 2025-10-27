@@ -48,11 +48,6 @@ class SLDConverter {
               <text x="30" y="15" text-anchor="middle" font-size="8" font-weight="bold">PV STRING</text>
               <text x="30" y="28" text-anchor="middle" font-size="7">Panels</text>`
       },
-      busbar: {
-        width: 20,
-        height: 400,
-        svg: `<rect x="0" y="0" width="20" height="400" fill="black" stroke="black" stroke-width="2"/>`
-      },
       connection: {
         svg: `<line x1="0" y1="0" x2="100" y2="0" stroke="black" stroke-width="2"/>`
       }
@@ -60,35 +55,22 @@ class SLDConverter {
   }
 
   /**
-   * Convert JSON data to SVG single line diagram
+   * Generate components and connections from JSON data
    * @param {Object} jsonData - The electrical system JSON data
-   * @returns {string} SVG content
+   * @returns {Object} Components and connections data
    */
-  async convertToSVG(jsonData) {
+  generateLayout(jsonData) {
     const components = [];
     const connections = [];
 
-    // Column layout (busbar → inverter → isolator → PV strings)
-    const busbarX = this.options.margin;
-    const inverterX = busbarX + 200;
-    const isolatorX = inverterX + 200;
-    const pvStringX = isolatorX + 220;
-    const pvStringsPerRow = 4;
-    const pvStringSpacing = 110;
-    const pvStringRowSpacing = 90;
-    const betweenInvertersSpacing = 150;
-
-    // Add a single dynamic-height busbar (height will be updated after layout)
-    const busbarComponent = {
-      id: 'busbar_main',
-      type: 'busbar',
-      x: busbarX,
-      y: this.options.margin, // temp; will be updated
-      width: 20,
-      height: 100,
-      label: 'Main Bus'
-    };
-    components.push(busbarComponent);
+    // Horizontal layout (inverter → isolators → PV strings)
+    const inverterX = this.options.margin;
+    const isolatorX = inverterX + 180;
+    const pvStartX = isolatorX + 150;
+    const pvStringSpacing = 80;
+    const isolatorVerticalSpacing = 80;
+    const stringVerticalSpacing = 70;
+    const betweenInvertersSpacing = 200;
 
     // Layout each inverter block vertically
     let currentY = this.options.margin + 120;
@@ -101,9 +83,9 @@ class SLDConverter {
       // Calculate the vertical height consumed by this inverter block
       let blockHeight = 0;
       for (let j = 0; j < inverter.isolators.length; j++) {
-        const iso = inverter.isolators[j];
-        const rows = Math.ceil(iso.pvstrings.length / pvStringsPerRow);
-        blockHeight += (rows * pvStringRowSpacing) + 120; // space for isolator + grid
+        const isolator = inverter.isolators[j];
+        const numStrings = isolator.pvstrings.length || 1;
+        blockHeight += (numStrings * stringVerticalSpacing) + isolatorVerticalSpacing;
       }
       blockHeight = Math.max(blockHeight, 140);
 
@@ -120,13 +102,6 @@ class SLDConverter {
       };
       components.push(inverterComponent);
 
-      // Busbar → Inverter connection (drawn as horizontal run later)
-      connections.push({
-        from: 'busbar_main',
-        to: `inverter_${i}`,
-        type: 'busbar_connection'
-      });
-
       // Isolators and PV strings for this inverter
       let isolatorY = inverterCenterY - (blockHeight / 2);
       for (let j = 0; j < inverter.isolators.length; j++) {
@@ -137,43 +112,64 @@ class SLDConverter {
           type: 'isolator',
           x: isolatorX,
           y: isolatorY,
-          label: `DC Isolator ${i + 1}-${j + 1}`
+          label: `Isolator ${i + 1}-${j + 1}`
         };
         components.push(isolatorComponent);
 
-        // Isolator → Inverter
+        // Inverter → Isolator (positive daisy-chain)
+        connections.push({
+          from: `inverter_${i}`,
+          to: `isolator_${i}_${j}`,
+          type: 'daisy_positive'
+        });
+        
+        // Isolator → Inverter (negative return)
         connections.push({
           from: `isolator_${i}_${j}`,
           to: `inverter_${i}`,
-          type: 'dc_connection'
+          type: 'daisy_negative_return'
         });
 
-        const rows = Math.ceil(isolator.pvstrings.length / pvStringsPerRow);
-        const totalWidth = (pvStringsPerRow - 1) * pvStringSpacing;
-        const startX = pvStringX - (totalWidth / 2);
+        // Generate panels for each string in a simple horizontal layout
+        const pvSymbol = this.symbols.pvString;
+        let stringYoffset = 0;
+        let maxPanelRight = 0;
 
-        for (let k = 0; k < isolator.pvstrings.length; k++) {
-          const pvString = isolator.pvstrings[k];
-          const row = Math.floor(k / pvStringsPerRow);
-          const col = k % pvStringsPerRow;
+        for (let s = 0; s < isolator.pvstrings.length; s++) {
+          const pvString = isolator.pvstrings[s];
+          const stringLength = pvString.length;
+          const model = pvString.model;
 
+          const panelsInString = [];
+          const stringY = isolatorY + stringYoffset;
+
+          for (let p = 0; p < stringLength; p++) {
           const pvComponent = {
-            id: `pv_${i}_${j}_${k}`,
+              id: `pv_${i}_${j}_${s}_${p}`,
             type: 'pvString',
-            x: startX + (col * pvStringSpacing),
-            y: isolatorY + 80 + (row * pvStringRowSpacing),
-            label: `${pvString.model} (${pvString.length} panels)`
+              x: pvStartX + (p * pvStringSpacing),
+              y: stringY,
+              label: p === 0 ? `${model} (${stringLength} panels)` : ''
           };
           components.push(pvComponent);
+            panelsInString.push(pvComponent);
+            maxPanelRight = Math.max(maxPanelRight, pvComponent.x + pvSymbol.width);
+          }
 
-          connections.push({
-            from: `pv_${i}_${j}_${k}`,
-            to: `isolator_${i}_${j}`,
-            type: 'pv_connection'
-          });
+          if (panelsInString.length > 0) {
+            // Positive daisy-chain from isolator through all panels
+            connections.push({ from: `isolator_${i}_${j}`, to: panelsInString[0].id, type: 'daisy_positive' });
+            for (let p = 0; p < panelsInString.length - 1; p++) {
+              connections.push({ from: panelsInString[p].id, to: panelsInString[p + 1].id, type: 'daisy_positive' });
+            }
+            // Negative return from last panel directly back to isolator
+            connections.push({ from: panelsInString[panelsInString.length - 1].id, to: `isolator_${i}_${j}`, type: 'daisy_negative_return' });
+          }
+
+          stringYoffset += stringVerticalSpacing;
         }
-
-        isolatorY += (rows * pvStringRowSpacing) + 120;
+        
+        isolatorY += stringYoffset + isolatorVerticalSpacing;
       }
 
       // Track overall vertical extent for busbar sizing
@@ -183,199 +179,34 @@ class SLDConverter {
       currentY += blockHeight + betweenInvertersSpacing;
     }
 
-    // Update busbar height to span all inverters neatly
-    const busbarPadding = 60;
-    if (layoutTop !== Infinity && layoutBottom !== -Infinity) {
-      busbarComponent.y = layoutTop - busbarPadding;
-      busbarComponent.height = (layoutBottom - layoutTop) + (busbarPadding * 2);
-    }
-
     // Expand canvas to fit content
     let maxRight = 0;
     let maxBottom = 0;
     components.forEach(c => {
       const symbol = this.symbols[c.type];
-      const width = c.type === 'busbar' ? (c.width || 20) : symbol.width;
-      const height = c.type === 'busbar' ? (c.height || symbol.height) : symbol.height;
+      const width = symbol.width;
+      const height = symbol.height;
       maxRight = Math.max(maxRight, c.x + width);
       maxBottom = Math.max(maxBottom, c.y + height);
     });
 
-    this.options.width = Math.max(this.options.width, maxRight + this.options.margin + 80);
-    this.options.height = Math.max(this.options.height, maxBottom + this.options.margin + 120);
+    const width = Math.max(this.options.width, maxRight + this.options.margin + 80);
+    const height = Math.max(this.options.height, maxBottom + this.options.margin + 120);
 
-    return this.generateSVG(components, connections);
+    return { components, connections, width, height };
   }
 
   /**
-   * Generate SVG content from components and connections
-   * @param {Array} components - Array of component objects
-   * @param {Array} connections - Array of connection objects
-   * @returns {string} Complete SVG content
-   */
-  generateSVG(components, connections) {
-    const svgWidth = this.options.width;
-    const svgHeight = this.options.height;
-
-    let svgContent = `<svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <style>
-          .component { cursor: pointer; }
-          .component:hover { opacity: 0.7; }
-          .connection { stroke: #333; stroke-width: 3; }
-          .positive-connection { stroke: #dc2626; stroke-width: 3; }
-          .negative-connection { stroke: #000000; stroke-width: 3; }
-          .busbar-connection { stroke: #1f2937; stroke-width: 4; }
-          .dc-connection { stroke: #059669; stroke-width: 3; }
-          .label { font-family: Arial, sans-serif; font-size: ${this.options.fontSize}px; }
-          .title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; }
-        </style>
-      </defs>
-      <rect width="100%" height="100%" fill="white"/>
-      <g class="diagram">`;
-
-    // Add title
-    svgContent += `<text x="${this.options.width / 2}" y="30" text-anchor="middle" class="title">Electrical Single Line Diagram</text>`;
-
-    // Add connections first (so they appear behind components)
-    connections.forEach(conn => {
-      const fromComp = components.find(c => c.id === conn.from);
-      const toComp = components.find(c => c.id === conn.to);
-      
-      if (fromComp && toComp) {
-        const fromSymbol = this.symbols[fromComp.type] || {};
-        const toSymbol = this.symbols[toComp.type] || {};
-        const fromCenterX = fromComp.x + (fromComp.type === 'busbar' ? (fromComp.width || 20) / 2 : fromSymbol.width / 2);
-        const fromCenterY = fromComp.y + (fromComp.type === 'busbar' ? (fromComp.height || fromSymbol.height) / 2 : fromSymbol.height / 2);
-        const toCenterX = toComp.x + (toComp.type === 'busbar' ? (toComp.width || 20) / 2 : toSymbol.width / 2);
-        const toCenterY = toComp.y + (toComp.type === 'busbar' ? (toComp.height || toSymbol.height) / 2 : toSymbol.height / 2);
-        
-        // Draw positive and negative lines for electrical connections
-        if (conn.type === 'pv_connection' || conn.type === 'dc_connection') {
-          // Clean orthogonal routing with parallel positive/negative paths
-          // Determine edge anchors
-          let sx, sy, tx, ty;
-          if (conn.type === 'pv_connection') {
-            // PV (right) → Isolator (left)
-            sx = fromComp.x; // left edge of PV
-            sy = fromComp.y + fromSymbol.height / 2;
-            tx = toComp.x + toSymbol.width; // right edge of isolator
-            ty = toComp.y + toSymbol.height / 2;
-          } else {
-            // Isolator (right) → Inverter (left)
-            sx = fromComp.x; // left edge of isolator
-            sy = fromComp.y + fromSymbol.height / 2;
-            tx = toComp.x + toSymbol.width; // right edge of inverter
-            ty = toComp.y + toSymbol.height / 2;
-          }
-
-          // Create a vertical jog near the destination side to bundle lines neatly
-          const nearDestX = tx - 30;
-          const posOffset = -4;
-          const negOffset = 4;
-          // small horizontal separation so vertical legs don't overlap
-          const posX = nearDestX - 4;
-          const negX = nearDestX + 4;
-
-          const makePath = (offset, midX) => `M ${sx} ${sy + offset} L ${midX} ${sy + offset} L ${midX} ${ty + offset} L ${tx} ${ty + offset}`;
-
-          // Positive (red) and negative (black) parallel polylines with separated verticals
-          svgContent += `<path d="${makePath(posOffset, posX)}" fill="none" stroke="#dc2626" stroke-width="3" class="positive-connection"/>`;
-          svgContent += `<path d="${makePath(negOffset, negX)}" fill="none" stroke="#000000" stroke-width="3" class="negative-connection"/>`;
-        } else if (conn.type === 'busbar_connection') {
-          // Busbar connection: horizontal run from busbar edge to inverter left edge
-          const busbar = fromComp.type === 'busbar' ? fromComp : toComp;
-          const other = fromComp.type === 'busbar' ? toComp : fromComp;
-          const otherSymbol = this.symbols[other.type];
-          const y = other.y + otherSymbol.height / 2;
-          const fromX = busbar.x + (busbar.width || 20);
-          const toX = other.x;
-          svgContent += `<line x1="${fromX}" y1="${y}" x2="${toX}" y2="${y}" class="busbar-connection"/>`;
-        } else {
-          // Standard connection
-          svgContent += `<line x1="${fromCenterX}" y1="${fromCenterY}" x2="${toCenterX}" y2="${toCenterY}" class="connection"/>`;
-        }
-      }
-    });
-
-    // Add components
-    components.forEach(comp => {
-      const symbol = this.symbols[comp.type];
-      let symbolSvg;
-      if (comp.type === 'busbar') {
-        const width = comp.width || 20;
-        const height = comp.height || symbol.height;
-        symbolSvg = `<rect x="${comp.x}" y="${comp.y}" width="${width}" height="${height}" fill="black" stroke="black" stroke-width="2"/>`;
-      } else {
-        symbolSvg = symbol.svg.replace(/x="0"/g, `x="${comp.x}"`).replace(/y="0"/g, `y="${comp.y}"`);
-      }
-      
-      // Adjust label positioning based on component type
-      const effectiveHeight = comp.type === 'busbar' ? (comp.height || symbol.height) : symbol.height;
-      const effectiveWidth = comp.type === 'busbar' ? (comp.width || 20) : symbol.width;
-      let labelY = comp.y + effectiveHeight + 15;
-      let labelX = comp.x + effectiveWidth / 2;
-      
-      if (comp.type === 'pvString') {
-        // Position PV string labels to avoid overlap
-        labelY = comp.y - 5;
-      } else if (comp.type === 'busbar') {
-        // Position busbar label to the left, centered vertically
-        labelX = comp.x - 10;
-        labelY = comp.y + effectiveHeight / 2;
-      }
-      
-      svgContent += `<g class="component" id="${comp.id}">
-        ${symbolSvg}
-        <text x="${labelX}" y="${labelY}" 
-              text-anchor="${comp.type === 'busbar' ? 'end' : 'middle'}" 
-              class="label" font-size="${comp.type === 'pvString' ? '9' : this.options.fontSize}">${comp.label}</text>
-      </g>`;
-    });
-
-    // Add legend
-    const legendY = this.options.height - 80;
-    svgContent += `<g class="legend">
-      <text x="50" y="${legendY}" class="label" font-weight="bold">Legend:</text>
-      <line x1="50" y1="${legendY + 15}" x2="80" y2="${legendY + 15}" class="positive-connection"/>
-      <text x="90" y="${legendY + 20}" class="label">Positive (Red)</text>
-      <line x1="200" y1="${legendY + 15}" x2="230" y2="${legendY + 15}" class="negative-connection"/>
-      <text x="240" y="${legendY + 20}" class="label">Negative (Black)</text>
-      <line x1="350" y1="${legendY + 15}" x2="380" y2="${legendY + 15}" class="busbar-connection"/>
-      <text x="390" y="${legendY + 20}" class="label">Busbar</text>
-    </g>`;
-
-    svgContent += `</g></svg>`;
-    return svgContent;
-  }
-
-  /**
-   * Convert JSON file to SVG and save to file
-   * @param {string} inputPath - Path to input JSON file
-   * @param {string} outputPath - Path to output SVG file
-   */
-  async convertFile(inputPath, outputPath) {
-    try {
-      const jsonData = JSON.parse(await fs.readFile(inputPath, 'utf8'));
-      const svgContent = await this.convertToSVG(jsonData);
-      await fs.writeFile(outputPath, svgContent, 'utf8');
-      console.log(`✅ Single line diagram generated: ${outputPath}`);
-      return svgContent;
-    } catch (error) {
-      console.error(`❌ Error converting file: ${error.message}`);
-      throw error;
-    }
-  }
-
-  /**
-   * Convert JSON data to HTML with embedded SVG
+   * Convert JSON data to HTML Canvas
    * @param {Object} jsonData - The electrical system JSON data
-   * @param {Object} options - HTML generation options
-   * @returns {string} HTML content
+   * @param {Object} options - Canvas generation options
+   * @returns {string} HTML content with canvas
    */
-  async convertToHTML(jsonData, options = {}) {
-    const svgContent = await this.convertToSVG(jsonData);
-    const title = options.title || 'Electrical Single Line Diagram';
+  async convertToCanvas(jsonData, options = {}) {
+    // Generate layout
+    const { components, connections, width: canvasWidth, height: canvasHeight } = this.generateLayout(jsonData);
+
+    const title = options.title || 'Single Line Diagram';
     
     return `<!DOCTYPE html>
 <html lang="en">
@@ -394,17 +225,9 @@ class SLDConverter {
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: inline-block;
         }
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .diagram-container {
-            text-align: center;
-            overflow: auto;
-        }
-        svg {
+        canvas {
             border: 1px solid #ddd;
             background-color: white;
         }
@@ -412,30 +235,149 @@ class SLDConverter {
 </head>
 <body>
     <div class="container">
-        <h1>${title}</h1>
-        <div class="diagram-container">
-            ${svgContent}
-        </div>
+        <canvas id="diagram" width="${canvasWidth}" height="${canvasHeight}"></canvas>
     </div>
+    <script>
+        const canvas = document.getElementById('diagram');
+        const ctx = canvas.getContext('2d');
+        
+        const components = ${JSON.stringify(components)};
+        const connections = ${JSON.stringify(connections)};
+        const symbols = ${JSON.stringify(this.symbols)};
+        
+        // Draw white background
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw connections first
+        connections.forEach(conn => {
+            const fromComp = components.find(c => c.id === conn.from);
+            const toComp = components.find(c => c.id === conn.to);
+            
+            if (!fromComp || !toComp) return;
+            
+            const fromSymbol = symbols[fromComp.type];
+            const toSymbol = symbols[toComp.type];
+            
+            if (conn.type === 'daisy_positive') {
+                const startX = fromComp.x + fromSymbol.width;
+                const startY = fromComp.y + fromSymbol.height / 3;
+                const endX = toComp.x;
+                const endY = toComp.y + toSymbol.height / 3;
+                
+                ctx.strokeStyle = '#dc2626';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                
+                if (fromComp.type === 'isolator') {
+                    const midX = endX - 30;
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(midX, startY);
+                    ctx.lineTo(midX, endY);
+                    ctx.lineTo(endX, endY);
+                } else if (fromComp.type === 'inverter') {
+                    const midX = startX + ((endX - startX) / 2);
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(midX, startY);
+                    ctx.lineTo(midX, endY);
+                    ctx.lineTo(endX, endY);
+                } else {
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                }
+                ctx.stroke();
+            } else if (conn.type === 'daisy_negative_return') {
+                const startX = fromComp.x + fromSymbol.width;
+                const startY = fromComp.y + (fromSymbol.height * 2 / 3);
+                const endX = toComp.x + toSymbol.width;
+                const endY = toComp.y + (toSymbol.height * 2 / 3);
+                
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                
+                if (fromComp.type === 'isolator' && toComp.type === 'inverter') {
+                    const jog = 20;
+                    const midX = endX + jog;
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(midX, startY);
+                    ctx.lineTo(midX, endY);
+                    ctx.lineTo(endX, endY);
+                } else {
+                    const jog = 15;
+                    const dropOffset = 25;
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(startX + jog, startY);
+                    ctx.lineTo(startX + jog, startY + dropOffset);
+                    ctx.lineTo(endX + jog, startY + dropOffset);
+                    ctx.lineTo(endX + jog, endY);
+                    ctx.lineTo(endX, endY);
+                }
+                ctx.stroke();
+            }
+        });
+        
+        // Draw components
+        components.forEach(comp => {
+            const symbol = symbols[comp.type];
+            
+            // Draw component rectangle
+            ctx.fillStyle = comp.type === 'pvString' ? 'lightblue' : 'white';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            
+            if (comp.type === 'inverter') {
+                ctx.beginPath();
+                ctx.roundRect(comp.x, comp.y, symbol.width, symbol.height, 5);
+                ctx.fill();
+                ctx.stroke();
+            } else if (comp.type === 'isolator') {
+                ctx.fillRect(comp.x, comp.y, symbol.width, symbol.height);
+                ctx.strokeRect(comp.x, comp.y, symbol.width, symbol.height);
+                
+                ctx.beginPath();
+                ctx.moveTo(comp.x + 10, comp.y + 20);
+
+                ctx.stroke();
+            } else if (comp.type === 'pvString') {
+                ctx.fillRect(comp.x, comp.y, symbol.width, symbol.height);
+                ctx.strokeRect(comp.x, comp.y, symbol.width, symbol.height);
+            }
+            
+            // Draw label
+            if (comp.label) {
+                ctx.fillStyle = 'black';
+                ctx.textAlign = 'center';
+                
+                if (comp.type === 'pvString') {
+                    ctx.font = '9px Arial';
+                    ctx.fillText(comp.label, comp.x + symbol.width / 2, comp.y - 5);
+                } else {
+                    ctx.font = '12px Arial';
+                    ctx.fillText(comp.label, comp.x + symbol.width / 2, comp.y + symbol.height + 15);
+                }
+            }
+        });
+    </script>
 </body>
 </html>`;
   }
 
   /**
-   * Convert JSON file to HTML and save to file
+   * Convert JSON file to Canvas HTML and save to file
    * @param {string} inputPath - Path to input JSON file
    * @param {string} outputPath - Path to output HTML file
    * @param {Object} options - HTML generation options
    */
-  async convertFileToHTML(inputPath, outputPath, options = {}) {
+  async convertFileToCanvas(inputPath, outputPath, options = {}) {
     try {
       const jsonData = JSON.parse(await fs.readFile(inputPath, 'utf8'));
-      const htmlContent = await this.convertToHTML(jsonData, options);
+      const htmlContent = await this.convertToCanvas(jsonData, options);
       await fs.writeFile(outputPath, htmlContent, 'utf8');
-      console.log(`✅ HTML single line diagram generated: ${outputPath}`);
+      console.log(`✅ Canvas HTML diagram generated: ${outputPath}`);
       return htmlContent;
     } catch (error) {
-      console.error(`❌ Error converting file to HTML: ${error.message}`);
+      console.error(`❌ Error converting file to Canvas: ${error.message}`);
       throw error;
     }
   }

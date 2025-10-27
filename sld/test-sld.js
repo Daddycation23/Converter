@@ -22,14 +22,10 @@ async function testSLDConverter() {
 
     // Test with sample data
     const inputFile = path.join(__dirname, 'PVArray1.json');
-    const outputSVG = path.join(__dirname, 'output-sld.svg');
-    const outputHTML = path.join(__dirname, 'output-sld.html');
-
-    console.log(chalk.yellow(`📊 Converting ${inputFile} to SVG...`));
-    await converter.convertFile(inputFile, outputSVG);
+    const outputCanvas = path.join(__dirname, 'output-sld.html');
     
-    console.log(chalk.yellow(`🌐 Converting ${inputFile} to HTML...`));
-    await converter.convertFileToHTML(inputFile, outputHTML, {
+    console.log(chalk.yellow(`🎨 Converting ${inputFile} to Canvas HTML...`));
+    await converter.convertFileToCanvas(inputFile, outputCanvas, {
       title: 'PV Array Single Line Diagram'
     });
 
@@ -45,9 +41,8 @@ async function testSLDConverter() {
     console.log(chalk.blue(`   PV Strings: ${stats.pvStrings}`));
     console.log(chalk.blue(`   Total Panels: ${stats.totalPanels}`));
     
-    console.log(chalk.green('\n📁 Generated files:'));
-    console.log(chalk.green(`   SVG: ${outputSVG}`));
-    console.log(chalk.green(`   HTML: ${outputHTML}`));
+    console.log(chalk.green('\n📁 Generated file:'));
+    console.log(chalk.green(`   Canvas HTML: ${outputCanvas}`));
 
   } catch (error) {
     console.error(chalk.red(`❌ Test failed: ${error.message}`));
