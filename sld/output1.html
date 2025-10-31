@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PV Array Single Line Diagram</title>
+    <title>Electrical Single Line Diagram</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -127,7 +127,7 @@
                 
                 ctx.beginPath();
                 ctx.moveTo(comp.x + 10, comp.y + 20);
-                ctx.lineTo(comp.x + 30, comp.y + 20);
+
                 ctx.stroke();
             } else if (comp.type === 'pvString') {
                 ctx.fillRect(comp.x, comp.y, symbol.width, symbol.height);

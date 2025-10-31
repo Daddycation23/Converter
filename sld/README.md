@@ -13,25 +13,21 @@ A Node.js module for converting electrical system JSON data into professional si
 
 ## Installation
 
-The module is already included in this project. No additional installation required.
-
-## Usage
+```bash
+npm install
+```
 
 ### Command Line Interface
-
-#### Convert JSON to SVG
 ```bash
-npm run sld convert sld/PVArray1.json output.svg
-```
 
-#### Convert JSON to HTML
-```bash
-npm run sld html sld/PVArray1.json output.html
-```
+# cd to sld
+cd sld
 
-#### Display System Statistics
-```bash
-npm run sld stats sld/PVArray1.json
+# Convert to SVG
+node sld-cli convert input.json output.html
+
+# Convert to HTML with custom title
+node sld-cli convert input.json output.html --title "Solar Array SLD"
 ```
 
 ### Programmatic Usage
@@ -111,96 +107,14 @@ The converter includes standard electrical symbols:
 - **Busbar**: Horizontal line for power distribution
 - **Connections**: Lines connecting components
 
-## Testing
-
-Run the test script to verify functionality:
-
-```bash
-npm run test-sld
-```
-
-This will:
-1. Convert the sample JSON file to SVG
-2. Convert the sample JSON file to HTML
-3. Display system statistics
-4. Generate output files for inspection
-
-## Output Files
-
-- **SVG Files**: Scalable vector graphics suitable for technical documentation
-- **HTML Files**: Web-ready diagrams with embedded SVG and styling
-- **Statistics**: Component counts and system specifications
-
-## Examples
-
-### Basic Conversion
-```bash
-# Convert to SVG
-npm run sld convert sld/PVArray1.json diagram.svg
-
-# Convert to HTML with custom title
-npm run sld html sld/PVArray1.json diagram.html --title "Solar Array SLD"
-```
 
 ### Custom Dimensions
 ```bash
 # Large diagram
-npm run sld convert sld/PVArray1.json large.svg --width 1600 --height 1200
+node sld-cli convert input.json output.html --width 1600 --height 1200
 
 # Compact diagram
-npm run sld convert sld/PVArray1.json compact.svg --width 800 --height 600
+node sld-cli convert input.json output.html --width 800 --height 600
 ```
 
-## Integration with PDF Converter
 
-The SLD converter can be integrated with the existing HTML-to-PDF converter:
-
-```bash
-# Generate HTML diagram
-npm run sld html sld/PVArray1.json temp.html
-
-# Convert to PDF
-npm run start convert temp.html output.pdf
-```
-
-## File Structure
-
-```
-src/
-├── sld-converter.js    # Core converter module
-└── sld-cli.js         # Command-line interface
-
-sld/
-└── PVArray1.json      # Sample electrical system data
-
-test-sld.js            # Test script
-SLD-README.md          # This documentation
-```
-
-## Error Handling
-
-The converter includes comprehensive error handling for:
-- Invalid JSON format
-- Missing required fields
-- File system errors
-- SVG generation errors
-
-## Performance
-
-- Optimized for systems with up to 1000+ components
-- Efficient SVG generation
-- Minimal memory footprint
-- Fast processing for typical electrical systems
-
-## Contributing
-
-To extend the converter:
-
-1. Add new electrical symbols to `initializeSymbols()`
-2. Modify the layout algorithm in `convertToSVG()`
-3. Update the CLI interface in `sld-cli.js`
-4. Add tests for new functionality
-
-## License
-
-MIT License - Same as the main project.

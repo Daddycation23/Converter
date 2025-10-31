@@ -34,21 +34,11 @@ program
     });
     
     try {
-      console.log(chalk.yellow(`🎨 Converting: ${input} → ${output}`));
       await converter.convertFileToCanvas(input, output, {
         title: options.title
       });
       
-      // Display system statistics
-      const jsonData = JSON.parse(require('fs').readFileSync(input, 'utf8'));
-      const stats = converter.getSystemStats(jsonData);
-      
-      console.log(chalk.blue('\n📈 System Statistics:'));
-      console.log(chalk.blue(`   Inverters: ${stats.inverters}`));
-      console.log(chalk.blue(`   Isolators: ${stats.isolators}`));
-      console.log(chalk.blue(`   PV Strings: ${stats.pvStrings}`));
-      console.log(chalk.blue(`   Total Panels: ${stats.totalPanels}`));
-      
+      console.log(chalk.green(`✅ Conversion successful: ${output}`));
     } catch (error) {
       console.error(chalk.red(`💥 Conversion failed: ${error.message}`));
       process.exit(1);
