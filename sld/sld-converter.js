@@ -292,6 +292,28 @@ class SLDConverter {
             );
         };
         
+        const getConnectionLaneX = (inverterComp, slotInfo, polarity, targetComp) => {
+            const inverterRight = inverterComp.x + symbols[inverterComp.type].width;
+            const laneIndex =
+                (slotInfo.slotIndex || 0) * 2 + (polarity === 'positive' ? 0 : 1);
+            const baseOffset = 24;
+            const laneSpacing = 28;
+            let laneX = inverterRight + baseOffset + laneIndex * laneSpacing;
+            
+            laneX = Math.max(laneX, inverterRight + 12);
+            
+            if (polarity === 'positive' && targetComp) {
+                laneX = Math.min(laneX, targetComp.x - 32);
+            }
+            
+            if (polarity === 'negative' && targetComp) {
+                const targetRight = targetComp.x + symbols[targetComp.type].width;
+                laneX = Math.min(laneX, targetRight - 24);
+            }
+            
+            return laneX;
+        };
+        
         // Draw white background
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -327,10 +349,7 @@ class SLDConverter {
                     const startY = getInverterConnectionY(fromComp, slotInfo, 'positive');
                     const startX = fromComp.x + fromSymbol.width;
                     
-                    const baseOffset = 28;
-                    const laneSpacing = 32;
-                    const maxLaneX = endX - 20;
-                    const laneX = Math.min(startX + baseOffset + (slotInfo.slotIndex * laneSpacing), maxLaneX);
+                    const laneX = getConnectionLaneX(fromComp, slotInfo, 'positive', toComp);
                     const isolatorConnectionY = toComp.y + (toSymbol.height / 4);
                     
                     ctx.moveTo(startX, startY);
@@ -356,9 +375,7 @@ class SLDConverter {
                     const startX = fromComp.x + fromSymbol.width;
                     const isolatorConnectionY = fromComp.y + (fromSymbol.height * 3 / 4);
                     
-                    const baseOffset = 60;
-                    const laneSpacing = 36;
-                    const laneX = endX + baseOffset + (slotInfo.slotIndex * laneSpacing);
+                    const laneX = getConnectionLaneX(toComp, slotInfo, 'negative', fromComp);
                     
                     ctx.moveTo(startX, isolatorConnectionY);
                     ctx.lineTo(laneX, isolatorConnectionY);
