@@ -34,12 +34,12 @@ class SLDConverter {
               <text x="40" y="35" text-anchor="middle" font-size="8">AC/DC</text>`
       },
       isolator: {
-        width: 40,
-        height: 40,
-        svg: `<rect x="0" y="0" width="40" height="40" fill="white" stroke="black" stroke-width="2"/>
-              <circle cx="20" cy="20" r="8" fill="none" stroke="black" stroke-width="2"/>
-              <line x1="12" y1="20" x2="28" y2="20" stroke="black" stroke-width="2"/>
-              <text x="20" y="35" text-anchor="middle" font-size="8">DC ISO</text>`
+        width: 50,
+        height: 50,
+        svg: `<rect x="0" y="0" width="50" height="50" fill="white" stroke="black" stroke-width="2"/>
+              <circle cx="25" cy="25" r="9" fill="none" stroke="black" stroke-width="2"/>
+              <line x1="15" y1="25" x2="35" y2="25" stroke="black" stroke-width="2"/>
+              <text x="25" y="42" text-anchor="middle" font-size="8">DC ISO</text>`
       },
       pvString: {
         width: 60,
@@ -425,17 +425,19 @@ class SLDConverter {
                     const slotInfo = isolatorSlotLookup[fromComp.id] || { slotIndex: 0, totalSlots: 1 };
                     const endX = toComp.x + toSymbol.width;
                     const endY = getInverterConnectionY(toComp, slotInfo, 'negative');
-                    const startX = fromComp.x + fromSymbol.width;
+                    const startX = fromComp.x; // exit from left side of isolator
                     const isolatorConnectionY = fromComp.y + (fromSymbol.height * 3 / 4);
                     
-                    const laneX = getConnectionLaneX(toComp, slotInfo, 'negative', fromComp);
-                    const dropY = Math.max(isolatorConnectionY + 12, fromComp.y + fromSymbol.height + 8);
+                    const feedOffset = slotInfo.slotIndex === 0
+                        ? 36
+                        : (slotInfo.slotIndex % 2 === 0 ? 14 : 22);
+                    const startXLeft = startX - feedOffset;
+                    const endXAdjusted = endX - feedOffset;
                     
                     ctx.moveTo(startX, isolatorConnectionY);
-                    ctx.lineTo(startX, dropY);
-                    ctx.lineTo(laneX, dropY);
-                    ctx.lineTo(laneX, endY);
-                    ctx.lineTo(endX, endY);
+                    ctx.lineTo(startXLeft, isolatorConnectionY);
+                    ctx.lineTo(startXLeft, endY);
+                    ctx.lineTo(endXAdjusted, endY);
                 } else if (toComp.type === 'isolator' && fromComp.type === 'pvString') {
                     // Return from last panel to isolator using alternating taps (black lane)
                     const parts = fromComp.id.split('_'); // pv_i_j_s_p
@@ -445,10 +447,14 @@ class SLDConverter {
                     
                     const startX = fromComp.x + fromSymbol.width;
                     const startY = fromComp.y + fromSymbol.height + 12;
-                    const endX = toComp.x; // entering isolator
+                    const isolatorRight = toComp.x + toSymbol.width;
+                    const endX = isolatorRight; // enter isolator on right edge
                     const endY = getInverterConnectionY(toComp, slotInfo, 'negative'); // reuse helper for tap order
                     
-                    const laneX = getConnectionLaneX(toComp, slotInfo, 'negative', fromComp);
+                    // Stack return lanes on the right side of the isolator, alternating beneath red feeds
+                    const baseOffset = 14;
+                    const laneSpacing = 12;
+                    const laneX = isolatorRight + baseOffset + (slotInfo.slotIndex * laneSpacing);
                     const panelExitY = fromComp.y + (fromSymbol.height * 3 / 4);
                     
                     ctx.moveTo(startX, panelExitY);
