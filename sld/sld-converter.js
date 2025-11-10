@@ -245,6 +245,53 @@ class SLDConverter {
         const connections = ${JSON.stringify(connections)};
         const symbols = ${JSON.stringify(this.symbols)};
         
+        const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+        
+        const inverterIsolatorMap = {};
+        const isolatorSlotLookup = {};
+        
+        components.forEach(comp => {
+            if (comp.type === 'isolator') {
+                const inverterIndex = comp.id.split('_')[1];
+                if (!inverterIsolatorMap[inverterIndex]) {
+                    inverterIsolatorMap[inverterIndex] = [];
+                }
+                inverterIsolatorMap[inverterIndex].push(comp);
+            }
+        });
+        
+        Object.entries(inverterIsolatorMap).forEach(([invIndex, isolators]) => {
+            isolators.sort((a, b) => a.y - b.y);
+            isolators.forEach((iso, slotIndex) => {
+                isolatorSlotLookup[iso.id] = {
+                    inverterIndex: invIndex,
+                    slotIndex,
+                    totalSlots: isolators.length
+                };
+            });
+        });
+        
+        const getInverterConnectionY = (inverterComp, slotInfo, polarity) => {
+            const symbol = symbols[inverterComp.type];
+            const inverterHeight = symbol.height;
+            const margin = 10;
+            const totalSlots = Math.max(1, slotInfo.totalSlots || 1);
+            const totalConnections = totalSlots * 2;
+            const connectionIndex =
+                (slotInfo.slotIndex || 0) * 2 + (polarity === 'positive' ? 0 : 1);
+            if (totalConnections <= 1) {
+                return inverterComp.y + inverterHeight / 2;
+            }
+            const availableHeight = Math.max(0, inverterHeight - margin * 2);
+            const step =
+                totalConnections > 1 ? availableHeight / (totalConnections - 1) : 0;
+            return clamp(
+                inverterComp.y + margin + step * connectionIndex,
+                inverterComp.y + 4,
+                inverterComp.y + inverterHeight - 4
+            );
+        };
+        
         // Draw white background
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -260,50 +307,68 @@ class SLDConverter {
             const toSymbol = symbols[toComp.type];
             
             if (conn.type === 'daisy_positive') {
-                const startX = fromComp.x + fromSymbol.width;
-                const startY = fromComp.y + fromSymbol.height / 3;
                 const endX = toComp.x;
-                const endY = toComp.y + toSymbol.height / 3;
+                const endY = toComp.y + toSymbol.height / 4;
                 
                 ctx.strokeStyle = '#dc2626';
                 ctx.lineWidth = 3;
                 ctx.beginPath();
                 
                 if (fromComp.type === 'isolator') {
-                    const midX = endX - 30;
+                    const startX = fromComp.x + fromSymbol.width;
+                    const startY = fromComp.y + fromSymbol.height / 4;
+                    const midX = Math.max(endX - 40, startX + 10);
                     ctx.moveTo(startX, startY);
                     ctx.lineTo(midX, startY);
                     ctx.lineTo(midX, endY);
                     ctx.lineTo(endX, endY);
                 } else if (fromComp.type === 'inverter') {
-                    const midX = startX + ((endX - startX) / 2);
+                    const slotInfo = isolatorSlotLookup[toComp.id] || { slotIndex: 0, totalSlots: 1 };
+                    const startY = getInverterConnectionY(fromComp, slotInfo, 'positive');
+                    const startX = fromComp.x + fromSymbol.width;
+                    
+                    const baseOffset = 28;
+                    const laneSpacing = 32;
+                    const maxLaneX = endX - 20;
+                    const laneX = Math.min(startX + baseOffset + (slotInfo.slotIndex * laneSpacing), maxLaneX);
+                    const isolatorConnectionY = toComp.y + (toSymbol.height / 4);
+                    
                     ctx.moveTo(startX, startY);
-                    ctx.lineTo(midX, startY);
-                    ctx.lineTo(midX, endY);
-                    ctx.lineTo(endX, endY);
+                    ctx.lineTo(laneX, startY);
+                    ctx.lineTo(laneX, isolatorConnectionY);
+                    ctx.lineTo(endX, isolatorConnectionY);
                 } else {
+                    const startX = fromComp.x + fromSymbol.width;
+                    const startY = fromComp.y + fromSymbol.height / 4;
                     ctx.moveTo(startX, startY);
                     ctx.lineTo(endX, endY);
                 }
                 ctx.stroke();
             } else if (conn.type === 'daisy_negative_return') {
-                const startX = fromComp.x + fromSymbol.width;
-                const startY = fromComp.y + (fromSymbol.height * 2 / 3);
-                const endX = toComp.x + toSymbol.width;
-                const endY = toComp.y + (toSymbol.height * 2 / 3);
-                
                 ctx.strokeStyle = '#000000';
                 ctx.lineWidth = 3;
                 ctx.beginPath();
                 
                 if (fromComp.type === 'isolator' && toComp.type === 'inverter') {
-                    const jog = 20;
-                    const midX = endX + jog;
-                    ctx.moveTo(startX, startY);
-                    ctx.lineTo(midX, startY);
-                    ctx.lineTo(midX, endY);
+                    const slotInfo = isolatorSlotLookup[fromComp.id] || { slotIndex: 0, totalSlots: 1 };
+                    const endX = toComp.x + toSymbol.width;
+                    const endY = getInverterConnectionY(toComp, slotInfo, 'negative');
+                    const startX = fromComp.x + fromSymbol.width;
+                    const isolatorConnectionY = fromComp.y + (fromSymbol.height * 3 / 4);
+                    
+                    const baseOffset = 60;
+                    const laneSpacing = 36;
+                    const laneX = endX + baseOffset + (slotInfo.slotIndex * laneSpacing);
+                    
+                    ctx.moveTo(startX, isolatorConnectionY);
+                    ctx.lineTo(laneX, isolatorConnectionY);
+                    ctx.lineTo(laneX, endY);
                     ctx.lineTo(endX, endY);
                 } else {
+                    const startX = fromComp.x + fromSymbol.width;
+                    const startY = fromComp.y + (fromSymbol.height * 3 / 4);
+                    const endX = toComp.x + toSymbol.width;
+                    const endY = toComp.y + (toSymbol.height * 3 / 4);
                     const jog = 15;
                     const dropOffset = 25;
                     ctx.moveTo(startX, startY);

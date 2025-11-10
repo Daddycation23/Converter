@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PV Array 2 - Single Line Diagram</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: inline-block;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            background-color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <canvas id="diagram" width="1200" height="2030"></canvas>
+    </div>
+    <script>
+        const canvas = document.getElementById('diagram');
+        const ctx = canvas.getContext('2d');
+        
+        const components = [{"id":"inverter_0","type":"inverter","x":50,"y":460,"label":"Inverter 1"},{"id":"isolator_0_0","type":"isolator","x":230,"y":130,"label":"Isolator 1-1"},{"id":"pv_0_0_0","type":"pvString","x":380,"y":130,"label":"Panasonic 330W HiT (12 panels)","panelCount":12},{"id":"pv_0_0_1","type":"pvString","x":380,"y":180,"label":"Panasonic 330W HiT (12 panels)","panelCount":12},{"id":"isolator_0_1","type":"isolator","x":230,"y":270,"label":"Isolator 1-2"},{"id":"pv_0_1_0","type":"pvString","x":380,"y":270,"label":"Panasonic 330W HiT (10 panels)","panelCount":10},{"id":"pv_0_1_1","type":"pvString","x":380,"y":320,"label":"Panasonic 330W HiT (10 panels)","panelCount":10},{"id":"pv_0_1_2","type":"pvString","x":380,"y":370,"label":"Panasonic 330W HiT (10 panels)","panelCount":10},{"id":"isolator_0_2","type":"isolator","x":230,"y":460,"label":"Isolator 1-3"},{"id":"pv_0_2_0","type":"pvString","x":380,"y":460,"label":"Panasonic 330W HiT (10 panels)","panelCount":10},{"id":"pv_0_2_1","type":"pvString","x":380,"y":510,"label":"Panasonic 330W HiT (10 panels)","panelCount":10},{"id":"pv_0_2_2","type":"pvString","x":380,"y":560,"label":"Panasonic 330W HiT (10 panels)","panelCount":10},{"id":"isolator_0_3","type":"isolator","x":230,"y":650,"label":"Isolator 1-4"},{"id":"pv_0_3_0","type":"pvString","x":380,"y":650,"label":"Panasonic 330W HiT (10 panels)","panelCount":10},{"id":"pv_0_3_1","type":"pvString","x":380,"y":700,"label":"Panasonic 330W HiT (10 panels)","panelCount":10},{"id":"pv_0_3_2","type":"pvString","x":380,"y":750,"label":"Panasonic 330W HiT (10 panels)","panelCount":10},{"id":"inverter_1","type":"inverter","x":50,"y":1445,"label":"Inverter 2"},{"id":"isolator_1_0","type":"isolator","x":230,"y":990,"label":"Isolator 2-1"},{"id":"pv_1_0_0","type":"pvString","x":380,"y":990,"label":"Panasonic 330W HiT (12 panels)","panelCount":12},{"id":"pv_1_0_1","type":"pvString","x":380,"y":1040,"label":"Panasonic 330W HiT (12 panels)","panelCount":12},{"id":"pv_1_0_2","type":"pvString","x":380,"y":1090,"label":"Panasonic 330W HiT (12 panels)","panelCount":12},{"id":"isolator_1_1","type":"isolator","x":230,"y":1180,"label":"Isolator 2-2"},{"id":"pv_1_1_0","type":"pvString","x":380,"y":1180,"label":"Panasonic 330W HiT (12 panels)","panelCount":12},{"id":"pv_1_1_1","type":"pvString","x":380,"y":1230,"label":"Panasonic 330W HiT (12 panels)","panelCount":12},{"id":"pv_1_1_2","type":"pvString","x":380,"y":1280,"label":"Panasonic 330W HiT (12 panels)","panelCount":12},{"id":"isolator_1_2","type":"isolator","x":230,"y":1370,"label":"Isolator 2-3"},{"id":"pv_1_2_0","type":"pvString","x":380,"y":1370,"label":"Panasonic 330W HiT (12 panels)","panelCount":12},{"id":"pv_1_2_1","type":"pvString","x":380,"y":1420,"label":"Panasonic 330W HiT (12 panels)","panelCount":12},{"id":"pv_1_2_2","type":"pvString","x":380,"y":1470,"label":"Panasonic 330W HiT (12 panels)","panelCount":12},{"id":"pv_1_2_3","type":"pvString","x":380,"y":1520,"label":"Panasonic 330W HiT (12 panels)","panelCount":12},{"id":"pv_1_2_4","type":"pvString","x":380,"y":1570,"label":"Panasonic 330W HiT (12 panels)","panelCount":12},{"id":"isolator_1_3","type":"isolator","x":230,"y":1660,"label":"Isolator 2-4"},{"id":"pv_1_3_0","type":"pvString","x":380,"y":1660,"label":"Panasonic 330W HiT (12 panels)","panelCount":12},{"id":"pv_1_3_1","type":"pvString","x":380,"y":1710,"label":"Panasonic 330W HiT (12 panels)","panelCount":12},{"id":"pv_1_3_2","type":"pvString","x":380,"y":1760,"label":"Panasonic 330W HiT (12 panels)","panelCount":12},{"id":"pv_1_3_3","type":"pvString","x":380,"y":1810,"label":"Panasonic 330W HiT (12 panels)","panelCount":12},{"id":"pv_1_3_4","type":"pvString","x":380,"y":1860,"label":"Panasonic 330W HiT (12 panels)","panelCount":12}];
+        const connections = [{"from":"inverter_0","to":"isolator_0_0","type":"positive"},{"from":"isolator_0_0","to":"inverter_0","type":"negative_return"},{"from":"isolator_0_0","to":"pv_0_0_0","type":"positive"},{"from":"pv_0_0_0","to":"isolator_0_0","type":"negative_return"},{"from":"isolator_0_0","to":"pv_0_0_1","type":"positive"},{"from":"pv_0_0_1","to":"isolator_0_0","type":"negative_return"},{"from":"inverter_0","to":"isolator_0_1","type":"positive"},{"from":"isolator_0_1","to":"inverter_0","type":"negative_return"},{"from":"isolator_0_1","to":"pv_0_1_0","type":"positive"},{"from":"pv_0_1_0","to":"isolator_0_1","type":"negative_return"},{"from":"isolator_0_1","to":"pv_0_1_1","type":"positive"},{"from":"pv_0_1_1","to":"isolator_0_1","type":"negative_return"},{"from":"isolator_0_1","to":"pv_0_1_2","type":"positive"},{"from":"pv_0_1_2","to":"isolator_0_1","type":"negative_return"},{"from":"inverter_0","to":"isolator_0_2","type":"positive"},{"from":"isolator_0_2","to":"inverter_0","type":"negative_return"},{"from":"isolator_0_2","to":"pv_0_2_0","type":"positive"},{"from":"pv_0_2_0","to":"isolator_0_2","type":"negative_return"},{"from":"isolator_0_2","to":"pv_0_2_1","type":"positive"},{"from":"pv_0_2_1","to":"isolator_0_2","type":"negative_return"},{"from":"isolator_0_2","to":"pv_0_2_2","type":"positive"},{"from":"pv_0_2_2","to":"isolator_0_2","type":"negative_return"},{"from":"inverter_0","to":"isolator_0_3","type":"positive"},{"from":"isolator_0_3","to":"inverter_0","type":"negative_return"},{"from":"isolator_0_3","to":"pv_0_3_0","type":"positive"},{"from":"pv_0_3_0","to":"isolator_0_3","type":"negative_return"},{"from":"isolator_0_3","to":"pv_0_3_1","type":"positive"},{"from":"pv_0_3_1","to":"isolator_0_3","type":"negative_return"},{"from":"isolator_0_3","to":"pv_0_3_2","type":"positive"},{"from":"pv_0_3_2","to":"isolator_0_3","type":"negative_return"},{"from":"inverter_1","to":"isolator_1_0","type":"positive"},{"from":"isolator_1_0","to":"inverter_1","type":"negative_return"},{"from":"isolator_1_0","to":"pv_1_0_0","type":"positive"},{"from":"pv_1_0_0","to":"isolator_1_0","type":"negative_return"},{"from":"isolator_1_0","to":"pv_1_0_1","type":"positive"},{"from":"pv_1_0_1","to":"isolator_1_0","type":"negative_return"},{"from":"isolator_1_0","to":"pv_1_0_2","type":"positive"},{"from":"pv_1_0_2","to":"isolator_1_0","type":"negative_return"},{"from":"inverter_1","to":"isolator_1_1","type":"positive"},{"from":"isolator_1_1","to":"inverter_1","type":"negative_return"},{"from":"isolator_1_1","to":"pv_1_1_0","type":"positive"},{"from":"pv_1_1_0","to":"isolator_1_1","type":"negative_return"},{"from":"isolator_1_1","to":"pv_1_1_1","type":"positive"},{"from":"pv_1_1_1","to":"isolator_1_1","type":"negative_return"},{"from":"isolator_1_1","to":"pv_1_1_2","type":"positive"},{"from":"pv_1_1_2","to":"isolator_1_1","type":"negative_return"},{"from":"inverter_1","to":"isolator_1_2","type":"positive"},{"from":"isolator_1_2","to":"inverter_1","type":"negative_return"},{"from":"isolator_1_2","to":"pv_1_2_0","type":"positive"},{"from":"pv_1_2_0","to":"isolator_1_2","type":"negative_return"},{"from":"isolator_1_2","to":"pv_1_2_1","type":"positive"},{"from":"pv_1_2_1","to":"isolator_1_2","type":"negative_return"},{"from":"isolator_1_2","to":"pv_1_2_2","type":"positive"},{"from":"pv_1_2_2","to":"isolator_1_2","type":"negative_return"},{"from":"isolator_1_2","to":"pv_1_2_3","type":"positive"},{"from":"pv_1_2_3","to":"isolator_1_2","type":"negative_return"},{"from":"isolator_1_2","to":"pv_1_2_4","type":"positive"},{"from":"pv_1_2_4","to":"isolator_1_2","type":"negative_return"},{"from":"inverter_1","to":"isolator_1_3","type":"positive"},{"from":"isolator_1_3","to":"inverter_1","type":"negative_return"},{"from":"isolator_1_3","to":"pv_1_3_0","type":"positive"},{"from":"pv_1_3_0","to":"isolator_1_3","type":"negative_return"},{"from":"isolator_1_3","to":"pv_1_3_1","type":"positive"},{"from":"pv_1_3_1","to":"isolator_1_3","type":"negative_return"},{"from":"isolator_1_3","to":"pv_1_3_2","type":"positive"},{"from":"pv_1_3_2","to":"isolator_1_3","type":"negative_return"},{"from":"isolator_1_3","to":"pv_1_3_3","type":"positive"},{"from":"pv_1_3_3","to":"isolator_1_3","type":"negative_return"},{"from":"isolator_1_3","to":"pv_1_3_4","type":"positive"},{"from":"pv_1_3_4","to":"isolator_1_3","type":"negative_return"}];
+        const symbols = {"inverter":{"width":80,"height":50,"svg":"<rect x=\"0\" y=\"0\" width=\"80\" height=\"50\" fill=\"white\" stroke=\"black\" stroke-width=\"2\" rx=\"5\"/>\n              <text x=\"40\" y=\"20\" text-anchor=\"middle\" font-size=\"10\" font-weight=\"bold\">INVERTER</text>\n              <text x=\"40\" y=\"35\" text-anchor=\"middle\" font-size=\"8\">AC/DC</text>"},"isolator":{"width":40,"height":40,"svg":"<rect x=\"0\" y=\"0\" width=\"40\" height=\"40\" fill=\"white\" stroke=\"black\" stroke-width=\"2\"/>\n              <circle cx=\"20\" cy=\"20\" r=\"8\" fill=\"none\" stroke=\"black\" stroke-width=\"2\"/>\n              <line x1=\"12\" y1=\"20\" x2=\"28\" y2=\"20\" stroke=\"black\" stroke-width=\"2\"/>\n              <text x=\"20\" y=\"35\" text-anchor=\"middle\" font-size=\"8\">DC ISO</text>"},"pvString":{"width":60,"height":40,"svg":"<rect x=\"0\" y=\"0\" width=\"60\" height=\"40\" fill=\"lightblue\" stroke=\"black\" stroke-width=\"2\"/>\n              <text x=\"30\" y=\"15\" text-anchor=\"middle\" font-size=\"8\" font-weight=\"bold\">PV STRING</text>\n              <text x=\"30\" y=\"28\" text-anchor=\"middle\" font-size=\"7\">Panels</text>"},"connection":{"svg":"<line x1=\"0\" y1=\"0\" x2=\"100\" y2=\"0\" stroke=\"black\" stroke-width=\"2\"/>"}};
+        
+        // Draw white background
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw connections first
+        connections.forEach(conn => {
+            const fromComp = components.find(c => c.id === conn.from);
+            const toComp = components.find(c => c.id === conn.to);
+            
+            if (!fromComp || !toComp) return;
+            
+            const fromSymbol = symbols[fromComp.type];
+            const toSymbol = symbols[toComp.type];
+            
+            if (conn.type === 'positive') {
+                const startX = fromComp.x + fromSymbol.width;
+                const startY = fromComp.y + fromSymbol.height / 3;
+                const endX = toComp.x;
+                const endY = toComp.y + toSymbol.height / 3;
+                
+                ctx.strokeStyle = '#dc2626';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                
+                if (fromComp.type === 'inverter') {
+                    const midX = startX + ((endX - startX) / 2);
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(midX, startY);
+                    ctx.lineTo(midX, endY);
+                    ctx.lineTo(endX, endY);
+                } else if (fromComp.type === 'isolator') {
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                } else {
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                }
+                ctx.stroke();
+            } else if (conn.type === 'negative_return') {
+                const startX = fromComp.x + fromSymbol.width;
+                const startY = fromComp.y + (fromSymbol.height * 2 / 3);
+                const endX = toComp.x + toSymbol.width;
+                const endY = toComp.y + (toSymbol.height * 2 / 3);
+                
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                
+                if (fromComp.type === 'isolator' && toComp.type === 'inverter') {
+                    const jog = 20;
+                    const midX = endX + jog;
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(midX, startY);
+                    ctx.lineTo(midX, endY);
+                    ctx.lineTo(endX, endY);
+                } else if (fromComp.type === 'pvString' && toComp.type === 'isolator') {
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, startY);
+                } else {
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                }
+                ctx.stroke();
+            }
+        });
+        
+        // Draw components
+        components.forEach(comp => {
+            const symbol = symbols[comp.type];
+            
+            // Draw component rectangle
+            ctx.fillStyle = comp.type === 'pvString' ? 'lightblue' : 'white';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            
+            if (comp.type === 'inverter') {
+                ctx.beginPath();
+                ctx.roundRect(comp.x, comp.y, symbol.width, symbol.height, 5);
+                ctx.fill();
+                ctx.stroke();
+            } else if (comp.type === 'isolator') {
+                ctx.fillRect(comp.x, comp.y, symbol.width, symbol.height);
+                ctx.strokeRect(comp.x, comp.y, symbol.width, symbol.height);
+                
+                // Draw isolator circle symbol
+                ctx.beginPath();
+                ctx.arc(comp.x + symbol.width / 2, comp.y + symbol.height / 2, 8, 0, 2 * Math.PI);
+                ctx.stroke();
+            } else if (comp.type === 'pvString') {
+                ctx.fillRect(comp.x, comp.y, symbol.width, symbol.height);
+                ctx.strokeRect(comp.x, comp.y, symbol.width, symbol.height);
+                
+                // Draw panel count inside the box
+                ctx.fillStyle = 'black';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(comp.panelCount + ' panels', comp.x + symbol.width / 2, comp.y + symbol.height / 2 + 4);
+            }
+            
+            // Draw label
+            if (comp.label) {
+                ctx.fillStyle = 'black';
+                ctx.textAlign = 'center';
+                
+                if (comp.type === 'pvString') {
+                    ctx.font = '9px Arial';
+                    // Split label to extract model name
+                    const modelMatch = comp.label.match(/^(.+?)s*(/);
+                    if (modelMatch) {
+                        ctx.fillText(modelMatch[1], comp.x + symbol.width / 2, comp.y - 5);
+                    } else {
+                        ctx.fillText(comp.label, comp.x + symbol.width / 2, comp.y - 5);
+                    }
+                } else {
+                    ctx.font = '12px Arial';
+                    ctx.fillText(comp.label, comp.x + symbol.width / 2, comp.y + symbol.height + 15);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
