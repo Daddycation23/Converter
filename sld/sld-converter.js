@@ -249,6 +249,7 @@ class SLDConverter {
         
         const inverterIsolatorMap = {};
         const isolatorSlotLookup = {};
+        const isolatorStringSlotLookup = {};
         
         components.forEach(comp => {
             if (comp.type === 'isolator') {
@@ -267,6 +268,30 @@ class SLDConverter {
                     inverterIndex: invIndex,
                     slotIndex,
                     totalSlots: isolators.length
+                };
+            });
+        });
+        
+        // Derive string order per isolator (use first panel of each string)
+        const isolatorToStringFirstPanels = {};
+        components.forEach(comp => {
+            if (comp.type === 'pvString') {
+                const parts = comp.id.split('_'); // pv_i_j_s_p
+                const i = parts[1], j = parts[2], s = parts[3], p = parts[4];
+                if (p === '0') {
+                    const isoId = 'isolator_' + i + '_' + j;
+                    if (!isolatorToStringFirstPanels[isoId]) isolatorToStringFirstPanels[isoId] = [];
+                    isolatorToStringFirstPanels[isoId].push({ stringIndex: parseInt(s, 10), y: comp.y });
+                }
+            }
+        });
+        Object.entries(isolatorToStringFirstPanels).forEach(([isoId, list]) => {
+            list.sort((a, b) => a.y - b.y);
+            const total = list.length;
+            list.forEach((entry, idx) => {
+                isolatorStringSlotLookup[isoId + '|' + entry.stringIndex] = {
+                    slotIndex: idx,
+                    totalSlots: total
                 };
             });
         });
@@ -337,13 +362,41 @@ class SLDConverter {
                 ctx.beginPath();
                 
                 if (fromComp.type === 'isolator') {
-                    const startX = fromComp.x + fromSymbol.width;
-                    const startY = fromComp.y + fromSymbol.height / 4;
-                    const midX = Math.max(endX - 40, startX + 10);
-                    ctx.moveTo(startX, startY);
-                    ctx.lineTo(midX, startY);
-                    ctx.lineTo(midX, endY);
-                    ctx.lineTo(endX, endY);
+                    // If connecting to the first panel of a string, route using alternating taps on the isolator
+                    if (toComp.type === 'pvString') {
+                        const parts = toComp.id.split('_'); // pv_i_j_s_p
+                        const i = parts[1], j = parts[2], s = parseInt(parts[3], 10), p = parseInt(parts[4], 10);
+                        if (p === 0) {
+                            const isoId = 'isolator_' + i + '_' + j;
+                            const slotInfo = isolatorStringSlotLookup[isoId + '|' + s] || { slotIndex: 0, totalSlots: 1 };
+                            const startX = fromComp.x + fromSymbol.width;
+                            const startY = getInverterConnectionY(fromComp, slotInfo, 'positive'); // reuse helper for isolator taps
+                            const laneX = getConnectionLaneX(fromComp, slotInfo, 'positive', toComp);
+                            const isolatorConnectionY = endY; // connect near top of first panel
+                            
+                            ctx.moveTo(startX, startY);
+                            ctx.lineTo(laneX, startY);
+                            ctx.lineTo(laneX, isolatorConnectionY);
+                            ctx.lineTo(endX, isolatorConnectionY);
+                        } else {
+                            // Fallback (should not happen for non-first panel)
+                            const startX = fromComp.x + fromSymbol.width;
+                            const startY = fromComp.y + fromSymbol.height / 4;
+                            const midX = Math.max(endX - 40, startX + 10);
+                            ctx.moveTo(startX, startY);
+                            ctx.lineTo(midX, startY);
+                            ctx.lineTo(midX, endY);
+                            ctx.lineTo(endX, endY);
+                        }
+                    } else {
+                        const startX = fromComp.x + fromSymbol.width;
+                        const startY = fromComp.y + fromSymbol.height / 4;
+                        const midX = Math.max(endX - 40, startX + 10);
+                        ctx.moveTo(startX, startY);
+                        ctx.lineTo(midX, startY);
+                        ctx.lineTo(midX, endY);
+                        ctx.lineTo(endX, endY);
+                    }
                 } else if (fromComp.type === 'inverter') {
                     const slotInfo = isolatorSlotLookup[toComp.id] || { slotIndex: 0, totalSlots: 1 };
                     const startY = getInverterConnectionY(fromComp, slotInfo, 'positive');
@@ -376,9 +429,31 @@ class SLDConverter {
                     const isolatorConnectionY = fromComp.y + (fromSymbol.height * 3 / 4);
                     
                     const laneX = getConnectionLaneX(toComp, slotInfo, 'negative', fromComp);
+                    const dropY = Math.max(isolatorConnectionY + 12, fromComp.y + fromSymbol.height + 8);
                     
                     ctx.moveTo(startX, isolatorConnectionY);
-                    ctx.lineTo(laneX, isolatorConnectionY);
+                    ctx.lineTo(startX, dropY);
+                    ctx.lineTo(laneX, dropY);
+                    ctx.lineTo(laneX, endY);
+                    ctx.lineTo(endX, endY);
+                } else if (toComp.type === 'isolator' && fromComp.type === 'pvString') {
+                    // Return from last panel to isolator using alternating taps (black lane)
+                    const parts = fromComp.id.split('_'); // pv_i_j_s_p
+                    const i = parts[1], j = parts[2], s = parseInt(parts[3], 10);
+                    const isoId = 'isolator_' + i + '_' + j;
+                    const slotInfo = isolatorStringSlotLookup[isoId + '|' + s] || { slotIndex: 0, totalSlots: 1 };
+                    
+                    const startX = fromComp.x + fromSymbol.width;
+                    const startY = fromComp.y + fromSymbol.height + 12;
+                    const endX = toComp.x; // entering isolator
+                    const endY = getInverterConnectionY(toComp, slotInfo, 'negative'); // reuse helper for tap order
+                    
+                    const laneX = getConnectionLaneX(toComp, slotInfo, 'negative', fromComp);
+                    const panelExitY = fromComp.y + (fromSymbol.height * 3 / 4);
+                    
+                    ctx.moveTo(startX, panelExitY);
+                    ctx.lineTo(startX, startY);
+                    ctx.lineTo(laneX, startY);
                     ctx.lineTo(laneX, endY);
                     ctx.lineTo(endX, endY);
                 } else {
