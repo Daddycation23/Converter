@@ -34,8 +34,7 @@
     
 <script>
   const pvData = {
-    "Array 1": {"inverters":[{"isolators":[{"pvstrings":[{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10}]},{"pvstrings":[{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10}]}]}]},
-    "Array 2": {"inverters":[{"isolators":[{"pvstrings":[{"model":"Panasonic 330W HiT","length":12},{"model":"Panasonic 330W HiT","length":12}]},{"pvstrings":[{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10}]},{"pvstrings":[{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10}]},{"pvstrings":[{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10}]}]},{"isolators":[{"pvstrings":[{"model":"Panasonic 330W HiT","length":12},{"model":"Panasonic 330W HiT","length":12},{"model":"Panasonic 330W HiT","length":12}]},{"pvstrings":[{"model":"Panasonic 330W HiT","length":12},{"model":"Panasonic 330W HiT","length":12},{"model":"Panasonic 330W HiT","length":12}]},{"pvstrings":[{"model":"Panasonic 330W HiT","length":12},{"model":"Panasonic 330W HiT","length":12},{"model":"Panasonic 330W HiT","length":12},{"model":"Panasonic 330W HiT","length":12},{"model":"Panasonic 330W HiT","length":12}]},{"pvstrings":[{"model":"Panasonic 330W HiT","length":12},{"model":"Panasonic 330W HiT","length":12},{"model":"Panasonic 330W HiT","length":12},{"model":"Panasonic 330W HiT","length":12},{"model":"Panasonic 330W HiT","length":12}]}]}]}
+    "PVArray1": {"inverters":[{"isolators":[{"pvstrings":[{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10}]},{"pvstrings":[{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10},{"model":"Panasonic 330W HiT","length":10}]}]}]}
   };
 </script>
 
@@ -173,6 +172,7 @@
                             
                             ctx.strokeStyle = CONFIG.colors.stroke;
                             ctx.fillStyle = CONFIG.colors.panel;
+                            ctx.lineWidth = 2; // Ensure consistent line width
                             // Draw Panel Box
                             drawRoundedRect(ctx, px, py, panelWidth, CONFIG.panel.height, CONFIG.panel.borderRadius);
                             // ctx.strokeRect(px, py, panelWidth, CONFIG.panel.height);
