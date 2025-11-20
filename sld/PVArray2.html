@@ -43,9 +43,11 @@
         // Constants for drawing
         const CONFIG = {
             panel: { width: 60, height: 40, spacing: 20, borderRadius: 5 },
-            isolator: { width: 50, height: 50, margin: 40 },
+            isolator: { width: 80, height: 50, margin: 40 }, 
             inverter: { width: 150, height: 150, margin: 50 },
             stringSpacing: 60, // Vertical space between strings
+            busSpacing: 0, // Unused now
+            wireSpacing: 4, // Spacing between parallel wires
             colors: {
                 positive: 'red',
                 negative: 'black',
@@ -72,236 +74,237 @@
         }
 
         function renderDiagram(name, data) {
-            const container = document.createElement('div');
-            container.className = 'container';
-            container.innerHTML = `<h2>${name}</h2>`;
-            
-            const canvas = document.createElement('canvas');
-            container.appendChild(canvas);
-            document.getElementById('diagrams').appendChild(container);
-            
-            const ctx = canvas.getContext('2d');
+            // Loop through all Inverters in the data set
+            data.inverters.forEach((inverter, invIndex) => {
+                const container = document.createElement('div');
+                container.className = 'container';
+                container.innerHTML = `<h2>${name} - Inverter ${invIndex + 1}</h2>`;
+                
+                const canvas = document.createElement('canvas');
+                container.appendChild(canvas);
+                document.getElementById('diagrams').appendChild(container);
+                
+                const ctx = canvas.getContext('2d');
 
-            // Calculate Dimensions
-            // Max strings in any isolator to determine height
-            // Max panels in any string to determine width
-            let maxStringLength = 0;
-            let totalStrings = 0;
-            let maxIsolators = 0;
-            
-            data.inverters.forEach(inv => {
-                if(inv.isolators.length > maxIsolators) maxIsolators = inv.isolators.length;
-                inv.isolators.forEach(iso => {
+                // 1. Calculate Stats and Dimensions for THIS Inverter
+                let totalStrings = 0;
+                let maxStringLength = 0;
+                const isolatorsCount = inverter.isolators.length;
+                
+                inverter.isolators.forEach(iso => {
                     totalStrings += iso.pvstrings.length;
                     iso.pvstrings.forEach(str => {
                         if (str.length > maxStringLength) maxStringLength = str.length;
                     });
                 });
-            });
 
-            // Layout Parameters
-            const startX = 50;
-            const startY = 50;
-            
-            // Estimate Canvas Size
-            // Width: Inverter Area + Isolator Area + Panel Strings Area
-            // Height: Sum of all string heights + margins
-            
-            // Let's structure it:
-            // Inverter (Bottom Left) 
-            // Isolators (Above Inverter? Or Right of Inverter?) 
-            // Reference "PVArray1.json": 1 Inverter -> 2 Isolators -> Multiple strings.
-            // Let's place Inverter on the Left. Isolators to the right. Strings to the right of Isolators.
-            // OR: Strings on top, flowing down to Isolators, then to Inverter.
-            // Based on standard SLD loops:
-            // Panels (Right) -> Isolators (Left/Middle) -> Inverter (Far Left/Bottom).
-            
-            // Let's go with: Inverter (Bottom Left). Isolators (Above Inverter). Strings (Right of Isolators).
-            
-            const inverterWidth = CONFIG.inverter.width;
-            const isolatorWidth = CONFIG.isolator.width;
-            const panelWidth = CONFIG.panel.width;
-            const panelSpacing = CONFIG.panel.spacing;
-            
-            const stringWidth = maxStringLength * (panelWidth + panelSpacing);
-            const canvasWidth = startX + inverterWidth + 100 + isolatorWidth + 100 + stringWidth + 100;
-            
-            // Height depends on number of strings
-            // We stack strings vertically.
-            // Each Isolator handles N strings.
-            // We group strings by Isolator.
-            
-            const stringHeight = CONFIG.panel.height + CONFIG.stringSpacing;
-            const totalHeight = (totalStrings * stringHeight) + 300; // + padding for inverter
-            
-            canvas.width = canvasWidth;
-            canvas.height = totalHeight;
-            
-            ctx.font = "12px Arial";
-            
-            // Draw !
-            // We'll calculate Y positions as we go.
-            let currentY = startY;
-            
-            // We need to center the inverter vertically relative to its isolators? 
-            // Or just place it at the bottom?
-            // Let's place Inverter at Bottom Left.
-            // Isolators stacked vertically above it?
-            // Actually, usually Isolators are near the Inverter.
-            // Let's iterate Inverters -> Isolators -> Strings.
-            
-            let currentStringY = 50; // Start from top
-            
-            data.inverters.forEach((inverter, invIndex) => {
-                const inverterYStart = currentStringY;
-                const isolatorPositions = [];
+                // Layout Config
+                const startX = 50;
+                const topMargin = 50;
+                const bottomMargin = 50;
                 
-                inverter.isolators.forEach((isolator, isoIndex) => {
-                    const isolatorYStart = currentStringY;
-                    const stringPositions = []; // To store where strings connect
+                const stringHeight = CONFIG.panel.height + CONFIG.stringSpacing;
+                const stringsTotalHeight = (totalStrings * stringHeight);
+                
+                // Calculate Isolator Row Width
+                const isolatorRowWidth = (isolatorsCount * CONFIG.isolator.width) + ((isolatorsCount - 1) * 60); // 60px gap
+                
+                // Dynamic Inverter Width Calculation
+                const minInputWidth = 35; // Safe width per input
+                const dynamicInverterWidth = Math.max(CONFIG.inverter.width, isolatorsCount * minInputWidth);
+                
+                // Left Section Width (Inverter/Isolators)
+                const leftSectionWidth = Math.max(dynamicInverterWidth, isolatorRowWidth);
+                
+                // Strings above Isolators
+                const requiredStringSectionHeight = stringsTotalHeight + 50; // + padding
+                
+                // Staggered Drop Calculation
+                const maxDrop = 40 + (Math.ceil(isolatorsCount/2) * 20);
+                
+                const isoY = topMargin + requiredStringSectionHeight;
+                const invY = isoY + CONFIG.isolator.height + maxDrop + 40; // ample space
+                const totalHeight = invY + CONFIG.inverter.height + bottomMargin;
+
+                // Calculate Width
+                const stringSectionWidth = maxStringLength * (CONFIG.panel.width + CONFIG.panel.spacing);
+                const totalWidth = startX + leftSectionWidth + 100 + stringSectionWidth + 100;
+                
+                canvas.width = totalWidth;
+                canvas.height = totalHeight;
+                
+                ctx.font = "12px Arial";
+
+                // 2. Determine Positions
+                
+                // Inverter Position (Bottom Left Area)
+                const invX = startX + (leftSectionWidth - dynamicInverterWidth) / 2;
+                
+                // Start X for the group
+                const isoGroupStartX = startX + (leftSectionWidth - isolatorRowWidth) / 2;
+                
+                // Draw Inverter
+                ctx.strokeStyle = CONFIG.colors.stroke;
+                ctx.fillStyle = '#fff';
+                drawRoundedRect(ctx, invX, invY, dynamicInverterWidth, CONFIG.inverter.height, 10);
+                ctx.fillStyle = CONFIG.colors.text;
+                ctx.textAlign = "center";
+                ctx.fillText("Inverter", invX + (dynamicInverterWidth/2), invY + (CONFIG.inverter.height/2));
+                ctx.textAlign = "left";
+                
+                let globalStringIndex = 0;
+                let currentStringY = topMargin;
+
+                // Center Index for Stagger Logic
+                const centerIdx = (isolatorsCount - 1) / 2;
+
+                // Iterate Isolators
+                inverter.isolators.forEach((iso, idx) => {
+                    const isoX = isoGroupStartX + (idx * (CONFIG.isolator.width + 60));
+                    const isoCenterX = isoX + (CONFIG.isolator.width / 2);
                     
-                    isolator.pvstrings.forEach((string, strIndex) => {
-                        // Draw String of Panels
-                        const stringX = startX + inverterWidth + 150; // Shift right
+                    // Draw Isolator
+                    ctx.strokeStyle = CONFIG.colors.stroke;
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(isoX, isoY, CONFIG.isolator.width, CONFIG.isolator.height);
+                    ctx.strokeRect(isoX, isoY, CONFIG.isolator.width, CONFIG.isolator.height);
+                    ctx.fillStyle = CONFIG.colors.text;
+                    ctx.textAlign = "center";
+                    ctx.fillText(`Isolator ${idx + 1}`, isoX + (CONFIG.isolator.width/2), isoY + (CONFIG.isolator.height/2));
+                    
+                    // --- Isolator to Inverter Connection (Dynamic Depth) ---
+                    const isoBottomY = isoY + CONFIG.isolator.height;
+                    
+                    const isoOutPos = isoCenterX - 10; 
+                    const isoOutNeg = isoCenterX + 10;
+                    
+                    // Inverter Input Points (Distributed across Dynamic Width)
+                    const invInputSectionWidth = dynamicInverterWidth / isolatorsCount;
+                    const invInputCenterX = invX + (invInputSectionWidth * idx) + (invInputSectionWidth/2);
+                    const invInPos = invInputCenterX - 10;
+                    const invInNeg = invInputCenterX + 10;
+                    
+                    // Staggered Midpoint Base
+                    const distFromCenter = Math.abs(idx - centerIdx);
+                    const dropDepth = 40 + (distFromCenter * 40); // 40px step
+                    const midY = isoBottomY + dropDepth;
+                    
+                    // Determine Routing Direction
+                    const movingRight = invInputCenterX > isoCenterX;
+                    
+                    let posMidY, negMidY;
+                    if (movingRight) {
+                        // Moving Right -> Pos is 'Outer', needs deeper path to cross under Neg's vertical
+                        posMidY = midY + 15;
+                        negMidY = midY;
+                    } else {
+                        // Moving Left -> Neg is 'Outer', needs deeper path
+                        posMidY = midY;
+                        negMidY = midY + 15;
+                    }
+                    
+                    // Handle near-vertical case
+                    if (Math.abs(invInputCenterX - isoCenterX) < 10) {
+                        posMidY = midY;
+                        negMidY = midY + 10;
+                    }
+
+                    // Positive (Red)
+                    ctx.strokeStyle = CONFIG.colors.positive;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(isoOutPos, isoBottomY);
+                    ctx.lineTo(isoOutPos, posMidY); // Down
+                    ctx.lineTo(invInPos, posMidY); // Horizontal
+                    ctx.lineTo(invInPos, invY); // Down to Inverter
+                    ctx.stroke();
+                    
+                    // Negative (Black)
+                    ctx.strokeStyle = CONFIG.colors.negative;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(isoOutNeg, isoBottomY);
+                    ctx.lineTo(isoOutNeg, negMidY); // Down
+                    ctx.lineTo(invInNeg, negMidY); // Horizontal
+                    ctx.lineTo(invInNeg, invY); // Down to Inverter
+                    ctx.stroke();
+
+
+                    // Process Strings (Isolator to Panels)
+                    iso.pvstrings.forEach((string, strIndex) => {
+                        const stringStartX = startX + leftSectionWidth + 80; // Direct offset
                         const stringY = currentStringY;
+                        const panelY = stringY;
+                        const panelCenterY = panelY + (CONFIG.panel.height / 2);
                         
                         // Draw Panels
                         for (let i = 0; i < string.length; i++) {
-                            const px = stringX + (i * (panelWidth + panelSpacing));
-                            const py = stringY;
-                            
+                            const px = stringStartX + (i * (CONFIG.panel.width + CONFIG.panel.spacing));
                             ctx.strokeStyle = CONFIG.colors.stroke;
                             ctx.fillStyle = CONFIG.colors.panel;
-                            ctx.lineWidth = 2; // Ensure consistent line width
-                            // Draw Panel Box
-                            drawRoundedRect(ctx, px, py, panelWidth, CONFIG.panel.height, CONFIG.panel.borderRadius);
-                            // ctx.strokeRect(px, py, panelWidth, CONFIG.panel.height);
-                            
-                            // Label?
-                            // ctx.fillStyle = CONFIG.colors.text;
-                            // ctx.fillText(`${i+1}`, px + 5, py + 20);
+                            ctx.lineWidth = 2;
+                            drawRoundedRect(ctx, px, panelY, CONFIG.panel.width, CONFIG.panel.height, CONFIG.panel.borderRadius);
                         }
                         
-                        // WIRING LOGIC
-                        // Red (+): From Isolator to First Panel (Leftmost) -> Through Panels -> End
-                        // Black (-): From Last Panel (Rightmost) -> Back to Isolator
-                        
-                        // Let's refine the "Loop" description.
-                        // "red line is the positive... connects from the first panel to the last panel"
-                        // This implies series connection is drawn in RED.
-                        
-                        const firstPanelX = stringX;
-                        const lastPanelX = stringX + ((string.length - 1) * (panelWidth + panelSpacing));
-                        const panelCenterY = stringY + (CONFIG.panel.height / 2);
-                        
-                        // Series connections (RED)
+                        // Series Connections
+                        const lastPanelX = stringStartX + ((string.length - 1) * (CONFIG.panel.width + CONFIG.panel.spacing));
                         ctx.strokeStyle = CONFIG.colors.positive;
                         ctx.lineWidth = 2;
-                        
-                        // Between panels
                         ctx.beginPath();
                         for (let i = 0; i < string.length - 1; i++) {
-                            const p1x = stringX + (i * (panelWidth + panelSpacing)) + panelWidth; // Right side of P1
-                            const p2x = stringX + ((i + 1) * (panelWidth + panelSpacing)); // Left side of P2
-                            
+                            const p1x = stringStartX + (i * (CONFIG.panel.width + CONFIG.panel.spacing)) + CONFIG.panel.width;
+                            const p2x = stringStartX + ((i + 1) * (CONFIG.panel.width + CONFIG.panel.spacing));
                             ctx.moveTo(p1x, panelCenterY);
                             ctx.lineTo(p2x, panelCenterY);
                         }
                         ctx.stroke();
+
+                        // --- WIRING: Isolator to String (Direct L-Shape) ---
+                        const isoWidth = CONFIG.isolator.width;
+                        const totalWires = iso.pvstrings.length * 2;
+                        const wireStep = isoWidth / (totalWires + 1);
                         
-                        // Connection Points for Isolator
-                        // Let's say Isolator is at (isolatorX, isolatorCenterY)
-                        // We'll draw the Isolator Box later, let's record the connection Y
-                        stringPositions.push({
-                            y: panelCenterY,
-                            startX: firstPanelX,
-                            endX: lastPanelX + panelWidth // Right side of last panel
-                        });
+                        const wireIndex = strIndex * 2;
+                        const startX_Pos = isoX + (wireStep * (wireIndex + 1));
+                        const startX_Neg = isoX + (wireStep * (wireIndex + 2));
+                        const isoTopY = isoY;
+
+                        // Positive Wire (Red)
+                        ctx.strokeStyle = CONFIG.colors.positive;
+                        ctx.lineWidth = 2; 
+                        ctx.beginPath();
+                        ctx.moveTo(startX_Pos, isoTopY);
+                        ctx.lineTo(startX_Pos, panelCenterY - CONFIG.wireSpacing); // Vertical Rise
+                        ctx.lineTo(stringStartX, panelCenterY - CONFIG.wireSpacing); // Horizontal Run
+                        ctx.stroke();
+                        
+                        // Negative Wire (Black)
+                        ctx.strokeStyle = CONFIG.colors.negative;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(startX_Neg, isoTopY);
+                        ctx.lineTo(startX_Neg, panelCenterY + CONFIG.wireSpacing); // Vertical Rise
+                        ctx.lineTo(stringStartX - 10, panelCenterY + CONFIG.wireSpacing); // Horizontal Run to meet Return Path
+                        ctx.stroke();
+                        
+                        // Return Path Logic
+                        ctx.strokeStyle = CONFIG.colors.negative;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        const lastPanelRight = stringStartX + ((string.length - 1) * (CONFIG.panel.width + CONFIG.panel.spacing)) + CONFIG.panel.width;
+                        ctx.moveTo(lastPanelRight, panelCenterY);
+                        ctx.lineTo(lastPanelRight + 10, panelCenterY);
+                        const returnY = panelY + CONFIG.panel.height + 5;
+                        ctx.lineTo(lastPanelRight + 10, returnY);
+                        ctx.lineTo(stringStartX - 10, returnY);
+                        ctx.lineTo(stringStartX - 10, panelCenterY + CONFIG.wireSpacing);
+                        ctx.stroke();
                         
                         currentStringY += stringHeight;
+                        globalStringIndex++;
                     });
                     
-                    // Draw Isolator
-                    // Position: To the left of the strings, centered vertically relative to its strings
-                    // Calculate height based on strings
-                    const isoContentHeight = (isolator.pvstrings.length * stringHeight) - CONFIG.stringSpacing;
-                    const isoBoxHeight = Math.max(isoContentHeight + 20, 50); // Min 50
-                    const isolatorCenterY = isolatorYStart + (isoContentHeight / 2) + (CONFIG.panel.height / 2); 
-                    const isolatorY = isolatorCenterY - (isoBoxHeight / 2);
-                    const isolatorX = startX + inverterWidth + 50;
-                    
-                    ctx.strokeStyle = CONFIG.colors.stroke;
-                    ctx.fillStyle = '#fff';
-                    ctx.fillRect(isolatorX, isolatorY, CONFIG.isolator.width, isoBoxHeight);
-                    ctx.strokeRect(isolatorX, isolatorY, CONFIG.isolator.width, isoBoxHeight);
-                    
-                    ctx.fillStyle = CONFIG.colors.text;
-                    ctx.textAlign = "center";
-                    ctx.fillText("Isolator", isolatorX + (CONFIG.isolator.width/2), isolatorCenterY);
-                    ctx.textAlign = "left";
-
-                    // Connect Strings to Isolator
-                    stringPositions.forEach(pos => {
-                        // Red (+) to First Panel (Left side)
-                        ctx.strokeStyle = CONFIG.colors.positive;
-                        ctx.beginPath();
-                        ctx.moveTo(isolatorX + CONFIG.isolator.width, pos.y - 5); 
-                        ctx.lineTo(pos.startX, pos.y - 5); 
-                        ctx.stroke();
-                        
-                        // Black (-) from Last Panel (Right side) to Isolator
-                        ctx.strokeStyle = CONFIG.colors.negative;
-                        ctx.beginPath();
-                        ctx.moveTo(pos.endX, pos.y); // Right side of last panel
-                        
-                        const returnY = pos.y + (CONFIG.panel.height / 2) + 10; // Below the panel
-                        
-                        ctx.lineTo(pos.endX + 10, pos.y); // Out a bit
-                        ctx.lineTo(pos.endX + 10, returnY); // Down
-                        ctx.lineTo(isolatorX + CONFIG.isolator.width + 10, returnY); // Back left (underneath)
-                        ctx.lineTo(isolatorX + CONFIG.isolator.width + 10, pos.y + 5); // Up to Isolator level
-                        ctx.lineTo(isolatorX + CONFIG.isolator.width, pos.y + 5); // Into Isolator
-                        ctx.stroke();
-                    });
-                    
-                    isolatorPositions.push({
-                        x: isolatorX,
-                        y: isolatorCenterY
-                    });
-                });
-                
-                // Draw Inverter
-                // Position: Left of Isolators, Centered relative to all its isolators
-                const totalInvContentHeight = currentStringY - inverterYStart - CONFIG.stringSpacing;
-                const invBoxHeight = Math.max(totalInvContentHeight + 40, 150);
-                const inverterCenterY = inverterYStart + (totalInvContentHeight / 2) + (CONFIG.panel.height / 2);
-                const inverterY = inverterCenterY - (invBoxHeight / 2);
-                const inverterX = startX;
-                
-                ctx.strokeStyle = CONFIG.colors.stroke;
-                ctx.fillStyle = '#fff';
-                drawRoundedRect(ctx, inverterX, inverterY, CONFIG.inverter.width, invBoxHeight, 10);
-                
-                ctx.fillStyle = CONFIG.colors.text;
-                ctx.textAlign = "center";
-                ctx.fillText("Inverter", inverterX + (CONFIG.inverter.width/2), inverterCenterY);
-                ctx.textAlign = "left";
-                
-                // Connect Isolators to Inverter
-                isolatorPositions.forEach(isoPos => {
-                    // Red (+)
-                    ctx.strokeStyle = CONFIG.colors.positive;
-                    ctx.beginPath();
-                    ctx.moveTo(inverterX + CONFIG.inverter.width, isoPos.y - 5);
-                    ctx.lineTo(isoPos.x, isoPos.y - 5);
-                    ctx.stroke();
-                    
-                    // Black (-)
-                    ctx.strokeStyle = CONFIG.colors.negative;
-                    ctx.beginPath();
-                    ctx.moveTo(inverterX + CONFIG.inverter.width, isoPos.y + 5);
-                    ctx.lineTo(isoPos.x, isoPos.y + 5);
-                    ctx.stroke();
+                    currentStringY += 20; // Gap between isolator groups
                 });
             });
         }
@@ -313,4 +316,3 @@
     </script>
 </body>
 </html>
-
